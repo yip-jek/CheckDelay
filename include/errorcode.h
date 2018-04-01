@@ -1,0 +1,23 @@
+#pragma once
+
+enum ERROR_CODE
+{
+	// Error code for base::Log
+	ERR_LOG_INVALID_PATH      = -10001,
+	ERR_LOG_CREATE_PATH_FAIL  = -10002,
+	ERR_LOG_INIT_FAIL         = -10003,
+	ERR_LOG_OPEN_LOGFILE_FAIL = -10004,
+
+	// Error code for base::Config
+	ERR_CFG_INVALID_FILE      = -20001,
+	ERR_CFG_OPEN_FILE_FAIL    = -20002,
+	ERR_CFG_UNREGISTER_ITEM   = -20003,
+	ERR_CFG_ITEM_NOT_FOUND    = -20004,
+	ERR_CFG_INVALID_VALUE     = -20005,
+
+	// Error code for CheckDelay
+	ERR_CHKDLY_INIT_FAIL      = -30001,
+	ERR_CHKDLY_SETPATH_FAIL   = -30002,
+	ERR_CHKDLY_OPENDIR_FAIL   = -30003,
+};
+
