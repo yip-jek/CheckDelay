@@ -44,10 +44,13 @@ void FullDir::GetFileList(std::vector<FDFileInfo>& vec_fileinfo) throw(base::Exc
 	FDFileInfo file_info;
 	file_info.parent_path = DIR_PATH;
 
+	time_t                   t_time = 0;
 	std::vector<std::string> vec_dir;
 	std::vector<FDFileInfo>  vec_file;
-	while ( m_pathDir.GetFileName(file_info.file_name, file_info.file_type, file_info.file_size, file_info.chg_time) )
+	while ( m_pathDir.GetFileName(file_info.file_name, file_info.file_type, file_info.file_size, t_time) )
 	{
+		file_info.chg_time.Set(t_time);
+
 		if ( base::BaseDir::DFT_DIR == file_info.file_type )
 		{
 			vec_dir.push_back(DIR_PATH+file_info.file_name);
@@ -78,6 +81,7 @@ void FullDir::RecurseGetFileList(std::vector<std::string>& vec_dir, std::vector<
 	std::string              str_path;
 	std::string              str_error;
 	FDFileInfo               file_info;
+	time_t                   t_time = 0;
 	std::vector<std::string> vec_subdir;
 
 	const int VEC_SIZE = vec_dir.size();
@@ -97,8 +101,10 @@ void FullDir::RecurseGetFileList(std::vector<std::string>& vec_dir, std::vector<
 		file_info.parent_path = str_path;
 		std::vector<std::string>().swap(vec_subdir);
 
-		while ( b_dir.GetFileName(file_info.file_name, file_info.file_type, file_info.file_size, file_info.chg_time) )
+		while ( b_dir.GetFileName(file_info.file_name, file_info.file_type, file_info.file_size, t_time) )
 		{
+			file_info.chg_time.Set(t_time);
+
 			if ( base::BaseDir::DFT_DIR == file_info.file_type )
 			{
 				vec_subdir.push_back(str_path+file_info.file_name);

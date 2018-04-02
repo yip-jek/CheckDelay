@@ -3,11 +3,12 @@
 #include <vector>
 #include "basedir.h"
 #include "exception.h"
+#include "simpletime.h"
 
 struct FDFileInfo
 {
 public:
-	FDFileInfo(): file_type(base::BaseDir::DFT_Unknown), file_size(0), chg_time(0)
+	FDFileInfo(): file_type(base::BaseDir::DFT_Unknown), file_size(0)
 	{}
 
 public:
@@ -15,7 +16,7 @@ public:
 	std::string                file_name;
 	base::BaseDir::DirFileType file_type;
 	long long                  file_size;
-	time_t                     chg_time;
+	base::SimpleTime           chg_time;
 };
 
 class FullDir
