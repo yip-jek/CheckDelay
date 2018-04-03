@@ -3,7 +3,7 @@
 #include "log.h"
 #include "pubstr.h"
 #include "simpletime.h"
-#include "check_delay.h"
+#include "checkdelay.h"
 
 const char* g_version = "v2.00";
 
@@ -11,15 +11,23 @@ int main(int argc, char* argv[])
 {
 	if ( argc != 3 )
 	{
-		std::cerr << "[usage] " << argv[0] << " log_prefix configuration_file" << std::endl;
+		std::cerr << "[usage] " << argv[0] << " log_id configuration_file" << std::endl;
 		return -1;
 	}
 
-	base::Log::SetLogFilePrefix(argv[1]);
+	base::Log::SetLogFilePrefix("CHKDLY");
 
 	long long log_id = 0;
-	base::PubStr::Str2LLong(base::SimpleTime::Now().Time17(), log_id);
-	base::Log::SetLogID(log_id);
+	if ( !base::PubStr::Str2LLong(argv[1], log_id) )
+	{
+		std::cerr << "[ERROR] Invalid log ID: " << argv[1] << std::endl;
+		return -1;
+	}
+	if ( !base::Log::SetLogID(log_id) )
+	{
+		std::cerr << "[ERROR] Set log ID failed !" << std::endl;
+		return -1;
+	}
 
 	base::AutoLogger aLog;
 	base::Log* pLog = aLog.Get();

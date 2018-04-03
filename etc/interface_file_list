@@ -1,7 +1,7 @@
-KF_[YYYYMMDD].txt
-WP_[YYYYMMDD].txt
-WZ_[YYYYMMDD].txt
-CA[MMDD].txt
+#目录序号, 渠道, 文件名,            T-天数, 时间点, 文件为空的size
+1,         ECOP, KF_[YYYYMMDD].txt, 1,        8,      32
+1,         ECOP, WP_[YYYYMMDD].txt, 1,        8,      32
+1,         ECOP, WZ_[YYYYMMDD].txt, 1,        8,      32
 BI_ATCZ_999_D_[YYYYMMDD]_00.txt
 BI_ATMR_999_D_[YYYYMMDD]_00.txt
 BI_ATMT_999_D_[YYYYMMDD]_00.txt
