@@ -1,5 +1,5 @@
 CPP = g++
-CPP_FLAGS = -g -w -O2 -m64
+CPP_FLAGS = -g -w -O2 -m64 -DLINUX
 
 APP_DIR = ..
 BIN_DIR = $(APP_DIR)/bin
@@ -11,10 +11,13 @@ des = $(BIN_DIR)/check_delay
 srcs = $(wildcard *.cpp)
 objs = $(srcs:.cpp=.o)
 
-.PHONY: all
+.PHONY: all test clean
 
 all: $(des)
 	@echo ALL MADE!
+
+test: CPP_FLAGS += -DTEST
+test: all
 
 $(des): $(objs)
 	$(CPP) $(CPP_FLAGS) -o $@ $^

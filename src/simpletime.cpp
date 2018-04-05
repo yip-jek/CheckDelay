@@ -63,9 +63,9 @@ SimpleTime::SimpleTime(time_t tt)
 	Set(tt);
 }
 
-SimpleTime::SimpleTime(long long time)
+SimpleTime::SimpleTime(long long time, bool cofactor)
 {
-	Set(time);
+	Set(time, cofactor);
 }
 
 SimpleTime::SimpleTime(const SimpleTime& st)
@@ -307,7 +307,7 @@ bool SimpleTime::Set(int y, int m, int d, int h, int mi, int s, int us /*= 0*/)
 	return (valid = true);
 }
 
-bool SimpleTime::Set(long long time)
+bool SimpleTime::Set(long long time, bool cofactor)
 {
 	int y  = time / 10000000000;
 	int m  = (time % 10000000000) / 100000000;

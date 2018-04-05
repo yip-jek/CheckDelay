@@ -136,10 +136,10 @@ void InterfaceFile::ExpandEstimatedTime() throw(base::Exception)
 		throw base::Exception(ERR_CHKDLY_IFFILE_INIT, "账期时间非法: [%s] [FILE:%s, LINE:%d]", day_time.c_str(), __FILE__, __LINE__);
 	}
 
-	ll_time <<= 6;
+	ll_time *= 1000000;
 	ll_time += (m_hour * 10000);
 
-	if ( !m_estimatedTime.Set(ll_time) )
+	if ( !m_estimatedTime.Set(ll_time, true) )
 	{
 		throw base::Exception(ERR_CHKDLY_IFFILE_INIT, "设置预计文件到达时间失败: [%lld] [FILE:%s, LINE:%d]", ll_time, __FILE__, __LINE__);
 	}
@@ -149,6 +149,6 @@ void InterfaceFile::ExpandFileNameSet() throw(base::Exception)
 {
 	std::string day_time = m_pIFFileList->GetPeriodDay();
 
-	if ( 
+	//if ( 
 }
 

@@ -12,7 +12,7 @@ public:
 	SimpleTime();
 	SimpleTime(int y, int m, int d, int h, int mi, int s, int us = 0);
 	explicit SimpleTime(time_t tt);
-	explicit SimpleTime(long long time);		// 时间格式：YYYYMMDDHHMISS
+	explicit SimpleTime(long long time, bool cofactor);		// 时间格式：YYYYMMDDHHMISS
 	SimpleTime(const SimpleTime& st);
 	virtual ~SimpleTime();
 
@@ -57,7 +57,7 @@ public:
 	// 设置时间
 	bool Set(time_t tt);
 	bool Set(int y, int m, int d, int h, int mi, int s, int us = 0);
-	bool Set(long long time);		// 时间格式：YYYYMMDDHHMISS
+	bool Set(long long time, bool cofactor);		// 时间格式：YYYYMMDDHHMISS
 
 	// 时间戳
 	std::string TimeStamp() const;

@@ -4,6 +4,20 @@
 #include "pubstr.h"
 #include "checkdelay.h"
 
+#ifdef TEST
+#include "interfacefile.h"
+#include "interfacefilelist.h"
+
+void Test()
+{
+	base::SimpleTime  period(20180405000000, true);
+	InterfaceFileList iffl(1, period);
+	InterfaceFile     iff(iffl);
+
+	iff.Init("1,         ECOP, KF_[YYYYMMDD].txt, 1,        8,      32");
+}
+#endif
+
 const char* g_version = "v2.00";
 
 int main(int argc, char* argv[])
@@ -39,11 +53,15 @@ int main(int argc, char* argv[])
 
 		try
 		{
+#ifdef TEST
+			Test();
+#else
 			CheckDelay chk_delay;
 
 			chk_delay.LoadConfig(argv[2]);
 			chk_delay.Init();
 			chk_delay.Run();
+#endif
 		}
 		catch ( base::Exception& ex )
 		{
