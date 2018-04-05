@@ -2,7 +2,6 @@
 #include <unistd.h>
 #include "log.h"
 #include "pubstr.h"
-#include "simpletime.h"
 #include "checkdelay.h"
 
 const char* g_version = "v2.00";
