@@ -7,14 +7,25 @@
 #ifdef TEST
 #include "interfacefile.h"
 #include "interfacefilelist.h"
+#include "optionset.h"
+#include "period.h"
 
 void Test()
 {
-	base::SimpleTime  period(20180405000000, true);
-	InterfaceFileList iffl(1, period);
-	InterfaceFile     iff(iffl);
+	Period prd;
+	prd.Init("T - 3");
 
-	iff.Init("1,         ECOP, KF_[YYYYMMDD].txt, 1,        8,      32");
+	// 1) YYYYMMDD, 例如 20180401
+	// 2) YYYYMM, 例如 201804
+	// 3) YYMMDD, 例如 180401
+	// 4) YYMM, 例如 1804
+	// 5) MMDD, 例如 0401
+	std::cout << "YYYYMMDD: " << prd.GetDay_fmt("YYYYMMDD") << std::endl;
+	std::cout << "YYYYMM  : " << prd.GetDay_fmt("YYYYMM") << std::endl;
+	std::cout << "YYMMDD  : " << prd.GetDay_fmt("YYMMDD") << std::endl;
+	std::cout << "YYMM    : " << prd.GetDay_fmt("YYMM") << std::endl;
+	std::cout << "MMDD    : " << prd.GetDay_fmt("MMDD") << std::endl;
+	std::cout << "YYDD    : " << prd.GetDay_fmt("YYDD") << std::endl;
 }
 #endif
 

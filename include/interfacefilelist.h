@@ -1,28 +1,45 @@
 #pragma once
 
 #include <string>
+#include <map>
 #include <vector>
 #include <set>
 #include "exception.h"
-#include "simpletime.h"
+
+namespace base
+{
+class Log;
+}
+
+class OptionSet;
+class InterfaceFile;
+class Period;
 
 class InterfaceFileList
 {
 public:
-	InterfaceFileList(int path_size, base::SimpleTime& period_time);
+	typedef std::vector<InterfaceFile>				VEC_IFF;
+	typedef std::map<int, VEC_IFF>					MAP_PSEQ_IFF;
+	typedef std::map<std::string, OptionSet>		MAP_OPS;
+
+public:
+	InterfaceFileList(int path_size, const Period& period);
 	~InterfaceFileList();
 
 public:
-	void Import(const std::string& interface_file) throw(base::Exception);
+	void ImportFile(const std::string& interface_file) throw(base::Exception);
 
-	int GetPathSize() const;
+	void ImportOptions(const std::vector<std::string>& vec_ops) throw(base::Exception);
 
-	// YYYYMMDD
-	std::string GetPeriodDay() const;
+	bool IsPathSeqValid(int seq) const;
+
+private:
+	base::Log*       m_pLog;
 
 private:
 	int              m_pathSize;			// 路径个数
-	base::SimpleTime m_periodTime;			// 账期时间
-	//std::set<std::string> m_setChannel;			// 渠道集
+	const Period*    m_pPeriod;				// 账期时间
+	MAP_OPS          m_mapOps;
+	MAP_PSEQ_IFF     m_mapPSeqIff;
 };
 

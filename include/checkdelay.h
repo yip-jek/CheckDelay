@@ -2,8 +2,8 @@
 
 #include <string>
 #include <vector>
-#include "exception.h"
 #include "config.h"
+#include "period.h"
 
 namespace base
 {
@@ -11,12 +11,16 @@ class Log;
 }
 
 class FullDir;
+class InterfaceFileList;
 
 class CheckDelay
 {
 public:
 	CheckDelay();
 	~CheckDelay();
+
+	static const char* const S_OPTION_SET;
+	static const char* const S_FILE_PATH;
 
 	static std::string GetCfgLogPath(char* p_cfgfile) throw(base::Exception);
 
@@ -43,8 +47,17 @@ private:
 	// 初始化输入目录
 	void InitInputDir() throw(base::Exception);
 
+	// 初始化账期时间
+	void InitPeriod() throw(base::Exception);
+
+	// 初始化 InterfaceFileList
+	void InitInterfaceFileList() throw(base::Exception);
+
 	// 释放输入目录资源
 	void ReleaseInputDir();
+
+	// 释放 InterfaceFileList
+	void ReleaseInterfaceFileList();
 
 	void CheckFDir(FullDir* pFDir) throw(base::Exception);
 
@@ -58,7 +71,7 @@ private:
 	std::string              m_dbPwd;					// 密码
 	bool                     m_dirVisible;				// 目录是否可见
 	bool                     m_recurse;					// 是否递归
-	std::string              m_period;					// 账期
+	std::string              m_periodDay;				// 账期
 
 private:
 	std::string              m_stateNormal;				// 状态：正常
@@ -80,5 +93,7 @@ private:
 
 private:
 	std::vector<FullDir*>    m_vecInputFDir;			// 输入目录列表
+	Period                   m_period;
+	InterfaceFileList*       m_pIffList;
 };
 

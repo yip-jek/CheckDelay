@@ -5,6 +5,10 @@
 #include "log.h"
 #include "pubstr.h"
 #include "simpletime.h"
+#include "interfacefilelist.h"
+
+const char* const CheckDelay::S_OPTION_SET = "OPTION_SET";
+const char* const CheckDelay::S_FILE_PATH  = "FILE_PATH";
 
 CheckDelay::CheckDelay()
 :m_pLog(base::Log::Instance())
@@ -12,12 +16,14 @@ CheckDelay::CheckDelay()
 ,m_recurse(false)
 ,m_uOptionSize(0)
 ,m_uPathSize(0)
+,m_pIffList(NULL)
 {
 }
 
 CheckDelay::~CheckDelay()
 {
 	ReleaseInputDir();
+	ReleaseInterfaceFileList();
 
 	base::Log::Release();
 }
@@ -68,7 +74,7 @@ void CheckDelay::LoadConfig(char* p_cfgfile) throw(base::Exception)
 
 	m_dirVisible = m_cfg.GetCfgBoolVal("COMMON", "DIR_VISIBLE");
 	m_recurse    = m_cfg.GetCfgBoolVal("COMMON", "RECURSE");
-	m_period     = m_cfg.GetCfgValue("COMMON", "PERIOD");
+	m_periodDay  = m_cfg.GetCfgValue("COMMON", "PERIOD");
 
 	m_stateNormal     = m_cfg.GetCfgValue("STATE", "STATE_NORMAL");
 	m_stateMissing    = m_cfg.GetCfgValue("STATE", "STATE_MISSING");
@@ -78,10 +84,10 @@ void CheckDelay::LoadConfig(char* p_cfgfile) throw(base::Exception)
 
 	m_interFileList = m_cfg.GetCfgValue("INTERFACE", "INTERFACE_FILE_LIST");
 	m_uOptionSize   = m_cfg.GetCfgUIntVal("INTERFACE", "OPTION_SIZE");
-	LoadDynamicCfg("INTERFACE", "OPTION_SET", m_uOptionSize, m_vecOptions);
+	LoadDynamicCfg("INTERFACE", S_OPTION_SET, m_uOptionSize, m_vecOptions);
 
 	m_uPathSize  = m_cfg.GetCfgUIntVal("INPUT", "PATH_SIZE");
-	LoadDynamicCfg("INPUT", "FILE_PATH", m_uPathSize, m_vecFilePath);
+	LoadDynamicCfg("INPUT", S_FILE_PATH, m_uPathSize, m_vecFilePath);
 
 	m_outputPath        = m_cfg.GetCfgValue("OUTPUT", "PATH");
 	m_outputMissingFile = m_cfg.GetCfgValue("OUTPUT", "MISSING_FILE");
@@ -95,6 +101,8 @@ void CheckDelay::LoadConfig(char* p_cfgfile) throw(base::Exception)
 void CheckDelay::Init() throw(base::Exception)
 {
 	InitInputDir();
+	InitPeriod();
+	InitInterfaceFileList();
 
 	m_pLog->Output("[CHECK_DELAY] Init OK.");
 }
@@ -117,7 +125,7 @@ void CheckDelay::LogOutConfig()
 	m_pLog->Output("");
 	m_pLog->Output("[COMMON] DIR_VISIBLE: [%s]", (m_dirVisible ? "YES" : "NO"));
 	m_pLog->Output("[COMMON] RECURSE    : [%s]", (m_recurse ? "YES" : "NO"));
-	m_pLog->Output("[COMMON] PERIOD     : [%s]", m_period.c_str());
+	m_pLog->Output("[COMMON] PERIOD     : [%s]", m_periodDay.c_str());
 	m_pLog->Output("");
 	m_pLog->Output("[STATE] STATE_NORMAL     : [%s]", m_stateNormal.c_str());
 	m_pLog->Output("[STATE] STATE_MISSING    : [%s]", m_stateMissing.c_str());
@@ -127,10 +135,10 @@ void CheckDelay::LogOutConfig()
 	m_pLog->Output("");
 	m_pLog->Output("[INTERFACE] INTERFACE_FILE_LIST: [%s]", m_interFileList.c_str());
 	m_pLog->Output("[INTERFACE] OPTION_SIZE        : [%u]", m_uOptionSize);
-	LogOutDynamicCfg("INTERFACE", "OPTION_SET", m_vecOptions);
+	LogOutDynamicCfg("INTERFACE", S_OPTION_SET, m_vecOptions);
 	m_pLog->Output("");
 	m_pLog->Output("[INPUT] PATH_SIZE: [%u]", m_uPathSize);
-	LogOutDynamicCfg("INPUT", "FILE_PATH", m_vecFilePath);
+	LogOutDynamicCfg("INPUT", S_FILE_PATH, m_vecFilePath);
 	m_pLog->Output("");
 	m_pLog->Output("[OUTPUT] PATH        : [%s]", m_outputPath.c_str());
 	m_pLog->Output("[OUTPUT] MISSING_FILE: [%s]", m_outputMissingFile.c_str());
@@ -201,6 +209,21 @@ void CheckDelay::InitInputDir() throw(base::Exception)
 	}
 }
 
+void CheckDelay::InitPeriod() throw(base::Exception)
+{
+	m_period.Init(m_periodDay);
+	m_pLog->Output("[CHECK_DELAY] Period: [%s] -> [%s]", m_periodDay.c_str(), m_period.GetDay().c_str());
+}
+
+void CheckDelay::InitInterfaceFileList() throw(base::Exception)
+{
+	ReleaseInterfaceFileList();
+
+	m_pIffList = new InterfaceFileList(m_uPathSize, m_period);
+	m_pIffList->ImportOptions(m_vecOptions);
+	m_pIffList->ImportFile(m_interFileList);
+}
+
 void CheckDelay::ReleaseInputDir()
 {
 	if ( m_vecInputFDir.empty() )
@@ -215,6 +238,15 @@ void CheckDelay::ReleaseInputDir()
 	}
 
 	std::vector<FullDir*>().swap(m_vecInputFDir);
+}
+
+void CheckDelay::ReleaseInterfaceFileList()
+{
+	if ( m_pIffList != NULL )
+	{
+		delete m_pIffList;
+		m_pIffList = NULL;
+	}
 }
 
 void CheckDelay::CheckFDir(FullDir* pFDir) throw(base::Exception)

@@ -9,3 +9,6 @@ test:
 clean:
 	@make -C src clean
 
+tclean:
+	@make -C src tclean
+

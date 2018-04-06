@@ -4,10 +4,12 @@
 #include "log.h"
 #include "pubtime.h"
 #include "pubstr.h"
+#include "period.h"
 
-InterfaceFile::InterfaceFile(InterfaceFileList& if_file_list)
+InterfaceFile::InterfaceFile(InterfaceFileList& if_file_list, const Period& period)
 :m_pLog(base::Log::Instance())
 ,m_pIFFileList(&if_file_list)
+,m_pPeriod(&period)
 ,m_pathSeq(0)
 ,m_days(0)
 ,m_hour(0)
@@ -15,9 +17,41 @@ InterfaceFile::InterfaceFile(InterfaceFileList& if_file_list)
 {
 }
 
+InterfaceFile::InterfaceFile(const InterfaceFile& iff)
+:m_pLog(base::Log::Instance())
+,m_pIFFileList(iff.m_pIFFileList)
+,m_pPeriod(iff.m_pPeriod)
+,m_pathSeq(iff.m_pathSeq)
+,m_channel(iff.m_channel)
+,m_fileName(iff.m_fileName)
+,m_days(iff.m_days)
+,m_hour(iff.m_hour)
+,m_fileBlanksize(iff.m_fileBlanksize)
+,m_setFileNameEx(iff.m_setFileNameEx)
+,m_estimatedTime(iff.m_estimatedTime)
+{
+}
+
 InterfaceFile::~InterfaceFile()
 {
 	base::Log::Release();
+}
+
+InterfaceFile& InterfaceFile::operator = (const InterfaceFile& iff)
+{
+	if ( this != &iff )
+	{
+		this->m_pathSeq       = iff.m_pathSeq;
+		this->m_channel       = iff.m_channel;
+		this->m_fileName      = iff.m_fileName;
+		this->m_days          = iff.m_days;
+		this->m_hour          = iff.m_hour;
+		this->m_fileBlanksize = iff.m_fileBlanksize;
+		this->m_setFileNameEx = iff.m_setFileNameEx;
+		this->m_estimatedTime = iff.m_estimatedTime;
+	}
+
+	return *this;
 }
 
 void InterfaceFile::Init(const std::string& fmt) throw(base::Exception)
@@ -75,7 +109,7 @@ void InterfaceFile::Explain(const std::string& fmt) throw(base::Exception)
 void InterfaceFile::Check() throw(base::Exception)
 {
 	// 目录序号是否合法
-	if ( m_pathSeq < 1 || m_pathSeq > m_pIFFileList->GetPathSize() )
+	if ( !m_pIFFileList->IsPathSeqValid(m_pathSeq) )
 	{
 		throw base::Exception(ERR_CHKDLY_IFFILE_INIT, "目录序号超越范围: [%d] [FILE:%s, LINE:%d]", m_pathSeq, __FILE__, __LINE__);
 	}
@@ -108,36 +142,17 @@ void InterfaceFile::Expand() throw(base::Exception)
 
 void InterfaceFile::ExpandEstimatedTime() throw(base::Exception)
 {
-	std::string day_time = m_pIFFileList->GetPeriodDay();
-
-	int year = 0;
-	if ( !base::PubStr::Str2Int(day_time.substr(0, 4), year) )
-	{
-		throw base::Exception(ERR_CHKDLY_IFFILE_INIT, "账期时间的年份无效: [%s] [FILE:%s, LINE:%d]", day_time.substr(0, 4).c_str(), __FILE__, __LINE__);
-	}
-
-	int mon = 0;
-	if ( !base::PubStr::Str2Int(day_time.substr(4, 2), mon) )
-	{
-		throw base::Exception(ERR_CHKDLY_IFFILE_INIT, "账期时间的月份无效: [%s] [FILE:%s, LINE:%d]", day_time.substr(4, 2).c_str(), __FILE__, __LINE__);
-	}
-
-	int day = 0;
-	if ( !base::PubStr::Str2Int(day_time.substr(6, 2), day) )
-	{
-		throw base::Exception(ERR_CHKDLY_IFFILE_INIT, "账期时间的日份无效: [%s] [FILE:%s, LINE:%d]", day_time.substr(6, 2).c_str(), __FILE__, __LINE__);
-	}
+	base::SimpleTime st_period = m_pPeriod->GetDay_ST();
 
 	// 生成预计到达时间
 	long long ll_time = 0;
-	day_time = base::PubTime::TheDatePlusDays(year, mon, day, m_days);
-	if ( !base::PubStr::Str2LLong(day_time, ll_time) )
-	{
-		throw base::Exception(ERR_CHKDLY_IFFILE_INIT, "账期时间非法: [%s] [FILE:%s, LINE:%d]", day_time.c_str(), __FILE__, __LINE__);
-	}
+	std::string day = base::PubTime::TheDatePlusDays(st_period.GetYear(), st_period.GetMon(), st_period.GetDay(), m_days);
+	base::PubStr::SetFormatString(day, "%s%02d0000", day.c_str(), m_hour);
 
-	ll_time *= 1000000;
-	ll_time += (m_hour * 10000);
+	if ( !base::PubStr::Str2LLong(day, ll_time) )
+	{
+		throw base::Exception(ERR_CHKDLY_IFFILE_INIT, "账期时间非法: [%s] [FILE:%s, LINE:%d]", day.c_str(), __FILE__, __LINE__);
+	}
 
 	if ( !m_estimatedTime.Set(ll_time, true) )
 	{
@@ -147,8 +162,8 @@ void InterfaceFile::ExpandEstimatedTime() throw(base::Exception)
 
 void InterfaceFile::ExpandFileNameSet() throw(base::Exception)
 {
-	std::string day_time = m_pIFFileList->GetPeriodDay();
+	m_setFileNameEx.clear();
+	std::string period_day = m_pPeriod->GetDay();
 
-	//if ( 
 }
 
