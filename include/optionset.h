@@ -14,7 +14,7 @@ public:
 	OptionSet();
 	~OptionSet();
 
-	static int GetSubstitute(const std::string& src, std::string& sub, unsigned int& size);
+	static int GetSubstitute(const std::string& src, const char l_border, const char r_border, std::string& sub, unsigned int& size);
 
 	static bool TryComplexSubstitute(const std::string& subs, std::string& l_sub, int& index);
 

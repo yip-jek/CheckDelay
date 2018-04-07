@@ -12,6 +12,9 @@ public:
 
 	static const unsigned int S_DAY_SIZE = 8;
 
+	static bool IsDayType(const std::string fmt);
+	static bool IsMonType(const std::string fmt);
+
 public:
 	void Init(const std::string& fmt) throw(base::Exception);
 

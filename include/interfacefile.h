@@ -9,6 +9,7 @@ namespace base
 class Log;
 }
 
+class IFFileWithState;
 class InterfaceFileList;
 class Period;
 
@@ -38,6 +39,9 @@ private:
 
 	void Check() throw(base::Exception);
 
+	// 是否为月账期
+	void CheckMonPeriod();
+
 	void Expand() throw(base::Exception);
 
 	void ExpandEstimatedTime() throw(base::Exception);
@@ -45,20 +49,21 @@ private:
 	void ExpandFileNameSet() throw(base::Exception);
 
 private:
-	base::Log*            m_pLog;
-	InterfaceFileList*    m_pIFFileList;
-	const Period*         m_pPeriod;
+	base::Log*                m_pLog;
+	InterfaceFileList*        m_pIFFileList;
+	const Period*             m_pPeriod;
 
 private:
-	int                   m_pathSeq;				// 目录序号
-	std::string           m_channel;				// 渠道
-	std::string           m_fileName;				// 文件名
-	int                   m_days;					// 延迟天数
-	int                   m_hour;					// 预计到达时间点：小时
-	unsigned int          m_fileBlanksize;			// 文件为空的大小
+	int                       m_pathSeq;				// 目录序号
+	std::string               m_channel;				// 渠道
+	std::string               m_fileName;				// 文件名
+	int                       m_days;					// 延迟天数
+	int                       m_hour;					// 预计到达时间点：小时
+	unsigned int              m_fileBlanksize;			// 文件为空的大小
 
 private:
-	std::set<std::string> m_setFileNameEx;			// (扩展) 文件名集
-	base::SimpleTime      m_estimatedTime;			// 预计文件到达时间
+	bool                      m_isMonPeriod;			// 是否为月账期
+	std::set<IFFileWithState> m_setFileNameEx;			// (扩展) 文件名集
+	base::SimpleTime          m_estimatedTime;			// 预计文件到达时间
 };
 

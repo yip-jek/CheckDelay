@@ -29,7 +29,7 @@ void Test()
 }
 #endif
 
-const char* g_version = "v2.00";
+const char* g_version = "v3.00";
 
 int main(int argc, char* argv[])
 {

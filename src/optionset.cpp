@@ -12,16 +12,16 @@ OptionSet::~OptionSet()
 {
 }
 
-int OptionSet::GetSubstitute(const std::string& src, std::string& sub, unsigned int& size)
+int OptionSet::GetSubstitute(const std::string& src, const char l_border, const char r_border, std::string& sub, unsigned int& size)
 {
-	// 格式：[ SUBSTITUTE ]
-	const size_t BEG_POS = src.find('[');
+	// 格式：{ SUBSTITUTE }
+	const size_t BEG_POS = src.find(l_border);
 	if ( std::string::npos == BEG_POS )
 	{
 		return -1;
 	}
 
-	const size_t END_POS = src.find(']', BEG_POS);
+	const size_t END_POS = src.find(r_border, BEG_POS);
 	if ( std::string::npos == END_POS )
 	{
 		return -1;

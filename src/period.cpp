@@ -11,6 +11,21 @@ Period::~Period()
 {
 }
 
+bool Period::IsDayType(const std::string fmt)
+{
+	const std::string FMT_UP = base::PubStr::TrimUpperB(fmt);
+	return (FMT_UP == "YYYYMMDD"
+		|| FMT_UP == "YYMMDD"
+		|| FMT_UP == "MMDD");
+}
+
+bool Period::IsMonType(const std::string fmt)
+{
+	const std::string FMT_UP = base::PubStr::TrimUpperB(fmt);
+	return (FMT_UP == "YYYYMM"
+		|| FMT_UP == "YYMM");
+}
+
 void Period::Init(const std::string& fmt) throw(base::Exception)
 {
 	if ( IsYMD(fmt) )

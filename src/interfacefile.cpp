@@ -5,6 +5,8 @@
 #include "pubtime.h"
 #include "pubstr.h"
 #include "period.h"
+#include "optionset.h"
+#include "iffilewithstate.h"
 
 InterfaceFile::InterfaceFile(InterfaceFileList& if_file_list, const Period& period)
 :m_pLog(base::Log::Instance())
@@ -14,6 +16,7 @@ InterfaceFile::InterfaceFile(InterfaceFileList& if_file_list, const Period& peri
 ,m_days(0)
 ,m_hour(0)
 ,m_fileBlanksize(0)
+,m_isMonPeriod(false)
 {
 }
 
@@ -27,6 +30,7 @@ InterfaceFile::InterfaceFile(const InterfaceFile& iff)
 ,m_days(iff.m_days)
 ,m_hour(iff.m_hour)
 ,m_fileBlanksize(iff.m_fileBlanksize)
+,m_isMonPeriod(iff.m_isMonPeriod)
 ,m_setFileNameEx(iff.m_setFileNameEx)
 ,m_estimatedTime(iff.m_estimatedTime)
 {
@@ -47,6 +51,7 @@ InterfaceFile& InterfaceFile::operator = (const InterfaceFile& iff)
 		this->m_days          = iff.m_days;
 		this->m_hour          = iff.m_hour;
 		this->m_fileBlanksize = iff.m_fileBlanksize;
+		this->m_isMonPeriod   = iff.m_isMonPeriod;
 		this->m_setFileNameEx = iff.m_setFileNameEx;
 		this->m_estimatedTime = iff.m_estimatedTime;
 	}
@@ -57,9 +62,7 @@ InterfaceFile& InterfaceFile::operator = (const InterfaceFile& iff)
 void InterfaceFile::Init(const std::string& fmt) throw(base::Exception)
 {
 	Explain(fmt);
-
 	Check();
-
 	Expand();
 }
 
@@ -131,27 +134,57 @@ void InterfaceFile::Check() throw(base::Exception)
 	{
 		throw base::Exception(ERR_CHKDLY_IFFILE_INIT, "文件为空的大小非法: [%d] [FILE:%s, LINE:%d]", m_fileBlanksize, __FILE__, __LINE__);
 	}
+
+	CheckMonPeriod();
+}
+
+void InterfaceFile::CheckMonPeriod()
+{
+	std::string period_fmt;
+	size_t      fmt_size = 0;
+
+	if ( OptionSet::GetSubstitute(m_fileName, '[', ']', period_fmt, fmt_size) >= 0 )
+	{
+		m_isMonPeriod = Period::IsMonType(period_fmt);
+	}
 }
 
 void InterfaceFile::Expand() throw(base::Exception)
 {
 	ExpandEstimatedTime();
-
 	ExpandFileNameSet();
 }
 
 void InterfaceFile::ExpandEstimatedTime() throw(base::Exception)
 {
 	base::SimpleTime st_period = m_pPeriod->GetDay_ST();
+	long long        ll_time   = 0;
+	std::string      str_time;
 
 	// 生成预计到达时间
-	long long ll_time = 0;
-	std::string day = base::PubTime::TheDatePlusDays(st_period.GetYear(), st_period.GetMon(), st_period.GetDay(), m_days);
-	base::PubStr::SetFormatString(day, "%s%02d0000", day.c_str(), m_hour);
-
-	if ( !base::PubStr::Str2LLong(day, ll_time) )
+	if ( m_isMonPeriod )	// 月账期
 	{
-		throw base::Exception(ERR_CHKDLY_IFFILE_INIT, "账期时间非法: [%s] [FILE:%s, LINE:%d]", day.c_str(), __FILE__, __LINE__);
+		// 月账期，账期日都是从 1 号开始算！
+		// 因此，迟延天数默认减去 1 天
+		int off_days = m_days - 1;
+		if ( off_days >= 0 )
+		{
+			str_time = base::PubTime::TheDatePlusDays(st_period.GetYear(), st_period.GetMon(), 1, off_days);
+		}
+		else
+		{
+			str_time = base::PubTime::TheDateMinusDays(st_period.GetYear(), st_period.GetMon(), 1, -off_days);
+		}
+	}
+	else	// 日账期
+	{
+		str_time = base::PubTime::TheDatePlusDays(st_period.GetYear(), st_period.GetMon(), st_period.GetDay(), m_days);
+	}
+
+	base::PubStr::SetFormatString(str_time, "%s%02d0000", str_time.c_str(), m_hour);
+	if ( !base::PubStr::Str2LLong(str_time, ll_time) )
+	{
+		throw base::Exception(ERR_CHKDLY_IFFILE_INIT, "账期时间非法: [%s] [FILE:%s, LINE:%d]", str_time.c_str(), __FILE__, __LINE__);
 	}
 
 	if ( !m_estimatedTime.Set(ll_time, true) )
