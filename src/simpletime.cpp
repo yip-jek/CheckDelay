@@ -240,7 +240,7 @@ bool SimpleTime::Set(time_t tt)
 {
 	tm* pt = localtime(&tt);
 
-	Set(pt->tm_year+1900, pt->tm_mon+1, pt->tm_mday, pt->tm_hour, pt->tm_min, pt->tm_sec);
+	return Set(pt->tm_year+1900, pt->tm_mon+1, pt->tm_mday, pt->tm_hour, pt->tm_min, pt->tm_sec);
 }
 
 bool SimpleTime::Set(int y, int m, int d, int h, int mi, int s, int us /*= 0*/)

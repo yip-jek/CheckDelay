@@ -1,6 +1,6 @@
 #pragma once
 
-#include <set>
+#include <map>
 #include <vector>
 #include "exception.h"
 #include "simpletime.h"
@@ -10,12 +10,16 @@ namespace base
 class Log;
 }
 
-class IFFileWithState;
+struct FDFileInfo;
+class IFFileState;
 class InterfaceFileList;
 class Period;
 
 class InterfaceFile
 {
+public:
+	typedef std::map<std::string, IFFileState>			MAP_IFFILE_STATE;
+
 public:
 	InterfaceFile(InterfaceFileList& if_file_list, const Period& period);
 	InterfaceFile(const InterfaceFile& iff);
@@ -28,6 +32,8 @@ public:
 
 public:
 	void Init(const std::string& fmt) throw(base::Exception);
+
+	void UpdateFileState(const FDFileInfo& f_info);
 
 	int          GetPathSeq()       const { return m_pathSeq      ; }
 	std::string  GetChannel()       const { return m_channel      ; }
@@ -57,21 +63,21 @@ private:
 	bool ExpandOneOption(const std::string& file_name, std::vector<std::string>& vec_fn);
 
 private:
-	base::Log*                m_pLog;
-	InterfaceFileList*        m_pIFFileList;
-	const Period*             m_pPeriod;
+	base::Log*         m_pLog;
+	InterfaceFileList* m_pIFFileList;
+	const Period*      m_pPeriod;
 
 private:
-	int                       m_pathSeq;				// 目录序号
-	std::string               m_channel;				// 渠道
-	std::string               m_fileName;				// 文件名
-	int                       m_days;					// 延迟天数
-	int                       m_hour;					// 预计到达时间点：小时
-	unsigned int              m_fileBlanksize;			// 文件为空的大小
+	int                m_pathSeq;				// 目录序号
+	std::string        m_channel;				// 渠道
+	std::string        m_fileName;				// 文件名
+	int                m_days;					// 延迟天数
+	int                m_hour;					// 预计到达时间点：小时
+	unsigned int       m_fileBlanksize;			// 文件为空的大小
 
 private:
-	bool                      m_isMonPeriod;			// 是否为月账期
-	std::set<IFFileWithState> m_setFileNameEx;			// (扩展) 文件名集
-	base::SimpleTime          m_estimatedTime;			// 预计文件到达时间
+	bool               m_isMonPeriod;			// 是否为月账期
+	MAP_IFFILE_STATE   m_mapFileNameEx;			// (扩展) 文件名集
+	base::SimpleTime   m_estimatedTime;			// 预计文件到达时间
 };
 

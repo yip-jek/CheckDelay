@@ -11,9 +11,11 @@ namespace base
 class Log;
 }
 
+struct FDFileInfo;
 class OptionSet;
 class InterfaceFile;
 class Period;
+struct OutputFileState;
 
 class InterfaceFileList
 {
@@ -37,6 +39,10 @@ public:
 	OptionSet* GetOptionSet(const std::string& op) throw(base::Exception);
 
 	void GetChannels(SET_STR& s_chann) const { s_chann = m_setChannel; }
+
+	void CompareFile(int path_seq, const std::vector<FDFileInfo>& vec_fi);
+
+	void ExportFileState(std::vector<OutputFileState>& vec_ofs);
 
 private:
 	base::Log*       m_pLog;

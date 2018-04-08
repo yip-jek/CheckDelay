@@ -4,9 +4,10 @@
 #include "log.h"
 #include "pubtime.h"
 #include "pubstr.h"
+#include "fulldir.h"
 #include "period.h"
 #include "optionset.h"
-#include "iffilewithstate.h"
+#include "iffilestate.h"
 
 const char* const InterfaceFile::S_CHANNEL_TAG = "CHANNEL";
 
@@ -33,7 +34,7 @@ InterfaceFile::InterfaceFile(const InterfaceFile& iff)
 ,m_hour(iff.m_hour)
 ,m_fileBlanksize(iff.m_fileBlanksize)
 ,m_isMonPeriod(iff.m_isMonPeriod)
-,m_setFileNameEx(iff.m_setFileNameEx)
+,m_mapFileNameEx(iff.m_mapFileNameEx)
 ,m_estimatedTime(iff.m_estimatedTime)
 {
 }
@@ -54,7 +55,7 @@ InterfaceFile& InterfaceFile::operator = (const InterfaceFile& iff)
 		this->m_hour          = iff.m_hour;
 		this->m_fileBlanksize = iff.m_fileBlanksize;
 		this->m_isMonPeriod   = iff.m_isMonPeriod;
-		this->m_setFileNameEx = iff.m_setFileNameEx;
+		this->m_mapFileNameEx = iff.m_mapFileNameEx;
 		this->m_estimatedTime = iff.m_estimatedTime;
 	}
 
@@ -66,6 +67,54 @@ void InterfaceFile::Init(const std::string& fmt) throw(base::Exception)
 	Explain(fmt);
 	Check();
 	Expand();
+}
+
+void InterfaceFile::UpdateFileState(const FDFileInfo& f_info)
+{
+	const std::string UPPER_FILE_NAME = base::PubStr::UpperB(f_info.file_name);
+	const size_t      FILE_NAME_SIZE  = UPPER_FILE_NAME.size();
+
+	for ( MAP_IFFILE_STATE::iterator m_it = m_mapFileNameEx.begin(); m_it != m_mapFileNameEx.end(); ++m_it )
+	{
+		const size_t IFFILE_SIZE = m_it->first.size();
+
+		// 完全匹配，或者前部匹配
+		if ( (FILE_NAME_SIZE == IFFILE_SIZE && UPPER_FILE_NAME == m_it->first) 
+			|| (FILE_NAME_SIZE > IFFILE_SIZE && UPPER_FILE_NAME.substr(0, IFFILE_SIZE) == m_it->first) )
+		{
+			IFFileState& ref_iffs = m_it->second;
+
+			// 是否内容为空？
+			if ( f_info.file_size <= (long long)m_fileBlanksize )	// 为空
+			{
+				// 是否延迟？
+				if ( f_info.chg_time > m_estimatedTime )	// 延迟
+				{
+					ref_iffs.SetFileState(IFFileState::IFFSTATE_DELAY_BLANK);
+				}
+				else	// 不延迟
+				{
+					ref_iffs.SetFileState(IFFileState::IFFSTATE_BLANK);
+				}
+			}
+			else	// 非为空
+			{
+				// 是否延迟？
+				if ( f_info.chg_time > m_estimatedTime )	// 延迟
+				{
+					ref_iffs.SetFileState(IFFileState::IFFSTATE_DELAY);
+				}
+				else	// 不延迟
+				{
+					ref_iffs.SetFileState(IFFileState::IFFSTATE_NORMAL);
+				}
+			}
+
+			ref_iffs.m_fileSize = f_info.file_size;
+			ref_iffs.m_chgtime  = f_info.chg_time.TimeStamp();
+			break;
+		}
+	}
 }
 
 void InterfaceFile::Explain(const std::string& fmt) throw(base::Exception)
@@ -199,7 +248,7 @@ void InterfaceFile::ExpandEstimatedTime() throw(base::Exception)
 
 void InterfaceFile::ExpandFileNameSet() throw(base::Exception)
 {
-	m_setFileNameEx.clear();
+	m_mapFileNameEx.clear();
 	std::string file_name;
 
 	if ( m_isMonPeriod )	// 月账期
@@ -227,7 +276,7 @@ std::string InterfaceFile::ExpandFileNamePeriod(const Period* p) throw(base::Exc
 	std::string  period_fmt;
 	std::string  period_time;
 	unsigned int fmt_size = 0;
-	int          beg_pos = 0;
+	int          beg_pos  = 0;
 
 	while ( (beg_pos = OptionSet::GetSubstitute(file_name, 0, '[', ']', period_fmt, fmt_size)) >= 0 )
 	{
@@ -249,8 +298,8 @@ void InterfaceFile::ExpandFileNameOptions(const std::string& file_name)
 	std::vector<std::string> vec_filename(1, file_name);
 	std::vector<std::string> vec_newfilename;
 	std::vector<std::string> vec_fn;
-	IFFileWithState          iffile_state;
 
+	int count = 0;
 	while ( !vec_filename.empty() )
 	{
 		const int VEC_SIZE = vec_filename.size();
@@ -264,20 +313,13 @@ void InterfaceFile::ExpandFileNameOptions(const std::string& file_name)
 			else
 			{
 				// 缺省状态：缺失
-				iffile_state.m_exFileName = ref_filename;
-				iffile_state.SetFileState(IFFileWithState::IFFSTATE_MISSING);
-				m_setFileNameEx.insert(iffile_state);
+				m_mapFileNameEx[ref_filename].SetFileState(IFFileState::IFFSTATE_MISSING);
+				m_pLog->Output("[INTERFACE_FILE] FILE_%d) [%s]", ++count, ref_filename.c_str());
 			}
 		}
 
 		vec_newfilename.swap(vec_filename);
 		std::vector<std::string>().swap(vec_newfilename);
-	}
-
-	int c = 0;
-	for ( std::set<IFFileWithState>::iterator it = m_setFileNameEx.begin(); it != m_setFileNameEx.end(); ++it )
-	{
-		m_pLog->Output("[INTERFACE_FILE] FILE_%d) [%s]", ++c, it->m_exFileName.c_str());
 	}
 }
 

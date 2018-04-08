@@ -1,11 +1,15 @@
-CPP = g++
-CPP_FLAGS = -g -w -O2 -m64 -DLINUX
+CPP       = GNU_G++
+CPP_FLAGS = -g -Wall -O2 -m64 -DLINUX
 
 APP_DIR = ..
 BIN_DIR = $(APP_DIR)/bin
 
-APP_INC = -I$(APP_DIR)/include
-INCL    = $(APP_INC)
+APP_INC   = -I$(APP_DIR)/include
+XDBO_INCL = -I$(XDBO2_HOME)/include
+INCL      = $(APP_INC) $(XDBO_INCL)
+
+XDBO_LIB  = -L$(XDBO2_HOME)/lib -lxdbo2
+LIBS      = $(XDBO_LIB)
 
 des   = $(BIN_DIR)/check_delay
 des_t = $(des)_test
@@ -22,10 +26,10 @@ test: $(des_t)
 	@echo TEST MADE!
 
 $(des): $(objs)
-	$(CPP) $(CPP_FLAGS) -o $@ $^
+	$(CPP) $(CPP_FLAGS) -o $@ $^ $(LIBS)
 
 $(des_t): $(objs)
-	$(CPP) $(CPP_FLAGS) -o $@ $^
+	$(CPP) $(CPP_FLAGS) -o $@ $^ $(LIBS)
 
 .cpp.o:
 	$(CPP) $(CPP_FLAGS) $(INCL) -c $<

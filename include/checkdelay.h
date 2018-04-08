@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <set>
 #include <map>
 #include <vector>
 #include "config.h"
@@ -14,9 +15,14 @@ class BaseFile;
 
 class FullDir;
 class InterfaceFileList;
+struct OutputFileState;
 
 class CheckDelay
 {
+public:
+	typedef std::map<std::string, base::BaseFile>			MAP_CHANN_OUTPUT;
+	typedef std::vector<OutputFileState>					VEC_OUT_FSTATE;
+
 public:
 	CheckDelay();
 	~CheckDelay();
@@ -64,13 +70,23 @@ private:
 	// 初始化输出
 	void InitOutput() throw(base::Exception);
 
-	void InitOutputOne(const std::string& chann, const std::string& file_name, std::map<std::string, base::BaseFile>& map_bf);
+	void InitOutputPath() throw(base::Exception);
 
-	void CheckFDir(FullDir* pFDir) throw(base::Exception);
+	void TransOutputPeriod(std::string& file_name);
+
+	void InitOutputChannel(const std::string& file_name, std::set<std::string> set_chann, MAP_CHANN_OUTPUT& map_bf) throw(base::Exception);
+
+	void TraverseInputDir() throw(base::Exception);
+
+	void OutputResult();
+
+	void OutputToFile();
+
+	void CloseOutputFile(MAP_CHANN_OUTPUT& map_bf);
 
 private:
-	base::Log*   m_pLog;
-	base::Config m_cfg;
+	base::Log*               m_pLog;
+	base::Config             m_cfg;
 
 private:
 	std::string              m_dbName;					// 数据库名
@@ -104,7 +120,8 @@ private:
 	InterfaceFileList*       m_pIffList;
 
 private:
-	std::map<std::string, base::BaseFile> m_mapOutputMissing;
-	std::map<std::string, base::BaseFile> m_mapOutputBlank;
+	MAP_CHANN_OUTPUT         m_mapOutputMissing;
+	MAP_CHANN_OUTPUT         m_mapOutputBlank;
+	VEC_OUT_FSTATE           m_vecOutputFState;
 };
 

@@ -2,8 +2,8 @@
 
 #include <string>
 
-// 接口文件（含状态）
-class IFFileWithState
+// 接口文件状态
+class IFFileState
 {
 public:
 	// 文件状态
@@ -17,20 +17,16 @@ public:
 	};
 
 public:
-	IFFileWithState()
+	IFFileState()
 	:m_iffState(IFFSTATE_NORMAL)
 	,m_stateMissing(false)
 	,m_stateBlank(false)
 	,m_stateDelay(false)
+	,m_fileSize(0)
 	{
 	}
 
-	~IFFileWithState() {}
-
-	friend bool operator < (const IFFileWithState& l_iffs, const IFFileWithState& r_iffs)
-	{
-		return (l_iffs.m_exFileName < r_iffs.m_exFileName);
-	}
+	~IFFileState() {}
 
 public:
 	// Getter
@@ -76,13 +72,14 @@ public:
 		}
 	}
 
-public:
-	std::string m_exFileName;
-
 private:
 	IFFS_State  m_iffState;				// 文件状态
 	bool        m_stateMissing;			// 子状态：缺失
 	bool        m_stateBlank;			// 子状态：内容为空
 	bool        m_stateDelay;			// 子状态：延迟
+
+public:
+	int         m_fileSize;
+	std::string m_chgtime;
 };
 

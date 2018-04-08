@@ -3,9 +3,11 @@
 #include "pubstr.h"
 #include "log.h"
 #include "errorcode.h"
+#include "fulldir.h"
 #include "interfacefile.h"
 #include "optionset.h"
 #include "checkdelay.h"
+#include "outputfilestate.h"
 
 InterfaceFileList::InterfaceFileList(int path_size, const Period& period)
 :m_pLog(base::Log::Instance())
@@ -107,5 +109,35 @@ OptionSet* InterfaceFileList::GetOptionSet(const std::string& op) throw(base::Ex
 	{
 		throw base::Exception(ERR_CHKDLY_IFFLIST_FAIL, "找不到对应的 OptionSet: [%s] [FILE:%s, LINE:%d]", s_op.c_str(), __FILE__, __LINE__);
 	}
+}
+
+void InterfaceFileList::CompareFile(int path_seq, const std::vector<FDFileInfo>& vec_fi)
+{
+	MAP_PSEQ_IFF::iterator m_it = m_mapPSeqIff.find(path_seq);
+	if ( m_mapPSeqIff.end() == m_it )	// 没有对应路径下需要监控的文件
+	{
+		m_pLog->Output("<WARNING> [INTERFACE_FILE_LIST] 没有对应路径下需要监控的文件: PATH_SEQ=[%d]", path_seq);
+		return;
+	}
+
+	VEC_IFF& ref_vec_iff = m_it->second;
+	const int VEC_RVI_SIZE = ref_vec_iff.size();
+
+	const int VEC_SIZE = vec_fi.size();
+	for ( int i = 0; i < VEC_SIZE; ++i )
+	{
+		const FDFileInfo& ref_fi = vec_fi[i];
+
+		for ( int j = 0; j < VEC_RVI_SIZE; ++j )
+		{
+			InterfaceFile& ref_iff = ref_vec_iff[j];
+
+			ref_iff.UpdateFileState(ref_fi);
+		}
+	}
+}
+
+void InterfaceFileList::ExportFileState(std::vector<OutputFileState>& vec_ofs)
+{
 }
 

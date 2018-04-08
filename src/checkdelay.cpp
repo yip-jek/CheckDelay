@@ -5,7 +5,10 @@
 #include "log.h"
 #include "pubstr.h"
 #include "simpletime.h"
+#include "interfacefile.h"
 #include "interfacefilelist.h"
+#include "optionset.h"
+#include "outputfilestate.h"
 
 const char* const CheckDelay::S_OPTION_SET = "OPTION_SET";
 const char* const CheckDelay::S_FILE_PATH  = "FILE_PATH";
@@ -110,11 +113,11 @@ void CheckDelay::Init() throw(base::Exception)
 
 void CheckDelay::Run() throw(base::Exception)
 {
-	const int VEC_SIZE = m_vecInputFDir.size();
-	for ( int i = 0; i < VEC_SIZE; ++i )
-	{
-		CheckFDir(m_vecInputFDir[i]);
-	}
+	TraverseInputDir();
+	OutputResult();
+
+	CloseOutputFile(m_mapOutputMissing);
+	CloseOutputFile(m_mapOutputBlank);
 }
 
 void CheckDelay::LogOutConfig()
@@ -252,41 +255,161 @@ void CheckDelay::ReleaseInterfaceFileList()
 
 void CheckDelay::InitOutput() throw(base::Exception)
 {
-	std::string           filename_missing;
-	std::string           filename_blank;
+	CloseOutputFile(m_mapOutputMissing);
+	CloseOutputFile(m_mapOutputBlank);
+
+	InitOutputPath();
+
+	TransOutputPeriod(m_outputMissingFile);
+	TransOutputPeriod(m_outputBlankFile);
+
 	std::set<std::string> s_chann;
-
 	m_pIffList->GetChannels(s_chann);
-	for ( std::set<std::string>::iterator s_it = s_chann.begin(); s_it != s_chann.end(); ++s_it )
+
+	InitOutputChannel(m_outputMissingFile, s_chann, m_mapOutputMissing);
+	InitOutputChannel(m_outputBlankFile, s_chann, m_mapOutputBlank);
+}
+
+void CheckDelay::InitOutputPath() throw(base::Exception)
+{
+	if ( !base::BaseDir::CreateFullPath(m_outputPath) )
 	{
-		InitOutputOne(*s_it, filename_missing, m_mapOutputMissing);
-		InitOutputOne(*s_it, filename_blank, m_mapOutputBlank);
+		throw base::Exception(ERR_CHKDLY_INIT_FAIL, "The output path is not ready: [%s] [FILE:%s, LINE:%d]", m_outputPath.c_str(), __FILE__, __LINE__);
+	}
+
+	base::BaseDir::DirWithSlash(m_outputPath);
+}
+
+void CheckDelay::TransOutputPeriod(std::string& file_name)
+{
+	std::string  period;
+	unsigned int fmt_size = 0;
+	int          beg_pos  = 0;
+
+	while ( (beg_pos = OptionSet::GetSubstitute(file_name, beg_pos, '[', ']', period, fmt_size)) >= 0 )
+	{
+		period = m_period.GetDay_fmt(period);
+		if ( period.empty() )
+		{
+			beg_pos += fmt_size;
+		}
+		else
+		{
+			file_name.replace(beg_pos, fmt_size, period);
+			beg_pos += period.size();
+		}
+	}
+
+	m_pLog->Output("[CHECK_DELAY] Transfer output file period: %s", file_name.c_str());
+}
+
+void CheckDelay::InitOutputChannel(const std::string& file_name, std::set<std::string> set_chann, MAP_CHANN_OUTPUT& map_bf) throw(base::Exception)
+{
+	std::string  str;
+	unsigned int size    = 0;
+	int          beg_pos = 0;
+
+	while ( (beg_pos = OptionSet::GetSubstitute(file_name, beg_pos, '[', ']', str, size)) >= 0 )
+	{
+		if ( base::PubStr::UpperB(str) == InterfaceFile::S_CHANNEL_TAG )
+		{
+			break;
+		}
+	}
+
+	if ( beg_pos < 0 )
+	{
+		throw base::Exception(ERR_CHKDLY_INIT_FAIL, "找不到输出文件名的渠道标识: [%s] [FILE:%s, LINE:%d]", InterfaceFile::S_CHANNEL_TAG, __FILE__, __LINE__);
+	}
+
+	for ( std::set<std::string>::iterator s_it = set_chann.begin(); s_it != set_chann.end(); ++s_it )
+	{
+		str = file_name;
+		str.replace(beg_pos, size, *s_it);
+		str = m_outputPath + str;
+
+		base::BaseFile& ref_bf = map_bf[*s_it];
+		if ( !ref_bf.Open(str, true) )
+		{
+			throw base::Exception(ERR_CHKDLY_INIT_FAIL, "Open output file failed: [%s] [FILE:%s, LINE:%d]", str.c_str(), __FILE__, __LINE__);
+		}
+
+		if ( !ref_bf.ReadyToWrite() )
+		{
+			throw base::Exception(ERR_CHKDLY_INIT_FAIL, "The output file is not ready to write: [%s] [FILE:%s, LINE:%d]", str.c_str(), __FILE__, __LINE__);
+		}
+
+		m_pLog->Output("[CHECK_DELAY] Output file: %s, [CHANNEL=%s]", str.c_str(), s_it->c_str());
 	}
 }
 
-void CheckDelay::InitOutputOne(const std::string& chann, const std::string& file_name, std::map<std::string, base::BaseFile>& map_bf)
+void CheckDelay::TraverseInputDir() throw(base::Exception)
 {
-	//base::BaseFile& ref_bf = m_mapOutputMissing[*s_it];
-}
-
-void CheckDelay::CheckFDir(FullDir* pFDir) throw(base::Exception)
-{
-	if ( NULL == pFDir )
-	{
-		throw base::Exception(ERR_CHKDLY_CHECK_FAIL, "The FullDir pointer is invalid: [NULL] [FILE:%s, LINE:%d]", __FILE__, __LINE__);
-	}
-
-	std::vector<FDFileInfo> vec_fileinfo;
-	pFDir->GetFileList(vec_fileinfo);
-
-	const int VEC_SIZE = vec_fileinfo.size();
-	m_pLog->Output("[CHECK_DELAY] Num of file(s): %d", VEC_SIZE);
-
+	const int VEC_SIZE = m_vecInputFDir.size();
 	for ( int i = 0; i < VEC_SIZE; ++i )
 	{
-		FDFileInfo& ref_fi = vec_fileinfo[i];
+		FullDir* p_fdir = m_vecInputFDir[i];
+		m_pLog->Output("[CHECK_DELAY] Traverse input path [%d]: %s", i+1, p_fdir->GetPath().c_str());
 
-		m_pLog->Output("[CHECK_DELAY] %s: [%s], %s, %lld, %s", ref_fi.parent_path.c_str(), base::BaseDir::DescribeFileType(ref_fi.file_type).c_str(), ref_fi.file_name.c_str(), ref_fi.file_size, ref_fi.chg_time.TimeStamp().c_str());
+		std::vector<FDFileInfo> vec_fileinfo;
+		p_fdir->GetFileList(vec_fileinfo);
+		m_pLog->Output("[CHECK_DELAY] Num of file(s): %lu", vec_fileinfo.size());
+
+		m_pIffList->CompareFile(i+1, vec_fileinfo);
 	}
+}
+
+void CheckDelay::OutputResult()
+{
+	m_pIffList->ExportFileState(m_vecOutputFState);
+
+	// 生成状态描述
+	const int VEC_SIZE = m_vecOutputFState.size();
+	for ( int i = 0; i < VEC_SIZE; ++i )
+	{
+		OutputFileState& ref_ofs = m_vecOutputFState[i];
+
+		switch ( ref_ofs.iff_state )
+		{
+		case IFFSTATE_NORMAL:			// 正常
+			ref_ofs.state_desc = m_stateNormal;
+			break;
+		case IFFSTATE_MISSING:			// 缺失
+			ref_ofs.state_desc = m_stateMissing;
+			break;
+		case IFFSTATE_BLANK:			// 内容为空
+			ref_ofs.state_desc = m_stateBlank;
+			break;
+		case IFFSTATE_DELAY:			// 延迟
+			ref_ofs.state_desc = m_stateDelay;
+			break;
+		case IFFSTATE_DELAY_BLANK:		// 延迟，内容为空
+			ref_ofs.state_desc = m_stateDelayBlank;
+			break;
+		}
+	}
+
+	OutputToFile();
+}
+
+void CheckDelay::OutputToFile()
+{
+}
+
+void CheckDelay::CloseOutputFile(MAP_CHANN_OUTPUT& map_bf)
+{
+	if ( map_bf.empty() )
+	{
+		return;
+	}
+
+	for ( MAP_CHANN_OUTPUT::iterator it = map_bf.begin(); it != map_bf.end(); ++it )
+	{
+		m_pLog->Output("[CHECK_DELAY] Close output file: %s", it->second.GetFilePath().c_str());
+
+		it->second.Close();
+	}
+
+	map_bf.clear();
 }
 

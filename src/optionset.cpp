@@ -107,7 +107,7 @@ void OptionSet::Expand(const std::string& file_name, VEC_STR& vec_fn) throw(base
 			{
 				if ( TryComplexSubstitute(sub, sub, index) && sub == m_option )
 				{
-					if ( index < 1 || index > it->size() )
+					if ( index < 1 || index > (int)it->size() )
 					{
 						throw base::Exception(ERR_CHKDLY_OPSET_FAIL, "OptionSet [%s] index is out of range: [%d] > [%lu] [FILE:%s, LINE:%d]", m_option.c_str(), index, it->size(), __FILE__, __LINE__);
 					}

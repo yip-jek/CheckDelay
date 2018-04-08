@@ -32,6 +32,8 @@ public:
 
 	bool SetPath(const std::string& path);
 
+	std::string GetPath() const { return m_pathDir.GetPath(); }
+
 	void GetFileList(std::vector<FDFileInfo>& vec_fileinfo) throw(base::Exception);
 
 private:
