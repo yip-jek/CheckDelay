@@ -14,16 +14,19 @@ public:
 	OptionSet();
 	~OptionSet();
 
-	static int GetSubstitute(const std::string& src, const char l_border, const char r_border, std::string& sub, unsigned int& size);
+	static int GetSubstitute(const std::string& src, size_t pos, const char l_border, const char r_border, std::string& sub, unsigned int& size);
 
 	static bool TryComplexSubstitute(const std::string& subs, std::string& l_sub, int& index);
 
 public:
 	void Init(const std::string& ops) throw(base::Exception);
 
-	bool SetSeq(unsigned int seq);
+	bool SetOption(const std::string& op);
 
-	unsigned int GetSeq() const;
+	std::string GetOption() const { return m_option; }
+	bool GetComplex() const { return m_isComlex; }
+
+	void Expand(const std::string& file_name, VEC_STR& vec_fn) throw(base::Exception);
 
 private:
 	bool IsComplex(const std::string& src, unsigned int& size) const;
@@ -33,8 +36,8 @@ private:
 	void InitComplexSet(const VEC_STR& vs, unsigned int size) throw(base::Exception);
 
 private:
-	unsigned int m_seq;				// 序号
-	bool         m_isComlex;		// 是否为复合
-	SET_VEC_STR  m_setOP;
+	std::string m_option;
+	bool        m_isComlex;			// 是否为复合
+	SET_VEC_STR m_setOP;
 };
 

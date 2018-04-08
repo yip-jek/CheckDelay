@@ -2,6 +2,13 @@
 1,         ECOP, KF_[YYYYMMDD].txt, 1,        8,      32
 1,         ECOP, WP_[YYYYMMDD].txt, 1,        8,      32
 1,         ECOP, WZ_[YYYYMMDD].txt, 1,        8,      32
+
+1, HWBOSS, BI_ATCZ_{ option_set_1 }_D_[YYYYMMDD]_00.txt, 1, 8, 0
+1, HWBOSS, BI_ATCZ_{ option_set_1 }_D__{ option_set_1 }__[YYYYMMDD]_00.txt, 1, 8, 0
+1, HWBOSS, BI_KCDM_{option_set_1 }_{ option_set_2 }_D_[YYYYMMDD]_01, 1, 8, 0
+1, HWBOSS, BI_RZGL_{ option_set_3 : 1 }_D_[YYYYMMDD]_F_{ option_set_3 : 2 }_00.txt, 1, 8, 0
+1, HWBOSS, BI_LLL_{ option_set_3 : 1 }_D_{ option_set_3 : 1 }_[YYYYMMDD]_F_{ option_set_3 : 2 }_00.txt, 1, 8, 0
+
 #BI_ATCZ_999_D_[YYYYMMDD]_00.txt
 #BI_ATMR_999_D_[YYYYMMDD]_00.txt
 #BI_ATMT_999_D_[YYYYMMDD]_00.txt

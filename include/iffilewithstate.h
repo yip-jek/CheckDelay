@@ -27,6 +27,11 @@ public:
 
 	~IFFileWithState() {}
 
+	friend bool operator < (const IFFileWithState& l_iffs, const IFFileWithState& r_iffs)
+	{
+		return (l_iffs.m_exFileName < r_iffs.m_exFileName);
+	}
+
 public:
 	// Getter
 	bool GetStateMissing() const { return m_stateMissing; }

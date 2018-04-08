@@ -1,6 +1,7 @@
 #pragma once
 
 #include <set>
+#include <vector>
 #include "exception.h"
 #include "simpletime.h"
 
@@ -23,6 +24,7 @@ public:
 	InterfaceFile& operator = (const InterfaceFile& iff);
 
 	static const unsigned int S_INTERFACE_FILE_FMT_SIZE = 6;		// 文件规则格式大小
+	static const char* const  S_CHANNEL_TAG;
 
 public:
 	void Init(const std::string& fmt) throw(base::Exception);
@@ -47,6 +49,12 @@ private:
 	void ExpandEstimatedTime() throw(base::Exception);
 
 	void ExpandFileNameSet() throw(base::Exception);
+
+	std::string ExpandFileNamePeriod(const Period* p) throw(base::Exception);
+
+	void ExpandFileNameOptions(const std::string& file_name);
+
+	bool ExpandOneOption(const std::string& file_name, std::vector<std::string>& vec_fn);
 
 private:
 	base::Log*                m_pLog;

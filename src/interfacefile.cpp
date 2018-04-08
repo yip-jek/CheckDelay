@@ -8,6 +8,8 @@
 #include "optionset.h"
 #include "iffilewithstate.h"
 
+const char* const InterfaceFile::S_CHANNEL_TAG = "CHANNEL";
+
 InterfaceFile::InterfaceFile(InterfaceFileList& if_file_list, const Period& period)
 :m_pLog(base::Log::Instance())
 ,m_pIFFileList(&if_file_list)
@@ -140,10 +142,10 @@ void InterfaceFile::Check() throw(base::Exception)
 
 void InterfaceFile::CheckMonPeriod()
 {
-	std::string period_fmt;
-	size_t      fmt_size = 0;
+	std::string  period_fmt;
+	unsigned int fmt_size = 0;
 
-	if ( OptionSet::GetSubstitute(m_fileName, '[', ']', period_fmt, fmt_size) >= 0 )
+	if ( OptionSet::GetSubstitute(m_fileName, 0, '[', ']', period_fmt, fmt_size) >= 0 )
 	{
 		m_isMonPeriod = Period::IsMonType(period_fmt);
 	}
@@ -191,12 +193,107 @@ void InterfaceFile::ExpandEstimatedTime() throw(base::Exception)
 	{
 		throw base::Exception(ERR_CHKDLY_IFFILE_INIT, "设置预计文件到达时间失败: [%lld] [FILE:%s, LINE:%d]", ll_time, __FILE__, __LINE__);
 	}
+
+	m_pLog->Output("[INTERFACE_FILE] Estimated time: %s", m_estimatedTime.TimeStamp().c_str());
 }
 
 void InterfaceFile::ExpandFileNameSet() throw(base::Exception)
 {
 	m_setFileNameEx.clear();
-	std::string period_day = m_pPeriod->GetDay();
+	std::string file_name;
 
+	if ( m_isMonPeriod )	// 月账期
+	{
+		base::SimpleTime st_period = m_pPeriod->GetDay_ST();
+		std::string str_day = base::PubTime::TheDateMinusMonths(st_period.GetYear(), st_period.GetMon(), 1) + "01";
+
+		// 月账期，采集新账期：上月1号
+		Period p;
+		p.Init(str_day);
+
+		file_name = ExpandFileNamePeriod(&p);
+	}
+	else
+	{
+		file_name = ExpandFileNamePeriod(m_pPeriod);
+	}
+
+	ExpandFileNameOptions(file_name);
+}
+
+std::string InterfaceFile::ExpandFileNamePeriod(const Period* p) throw(base::Exception)
+{
+	std::string  file_name = m_fileName;
+	std::string  period_fmt;
+	std::string  period_time;
+	unsigned int fmt_size = 0;
+	int          beg_pos = 0;
+
+	while ( (beg_pos = OptionSet::GetSubstitute(file_name, 0, '[', ']', period_fmt, fmt_size)) >= 0 )
+	{
+		period_time = p->GetDay_fmt(period_fmt);
+		if ( period_time.empty() )
+		{
+			throw base::Exception(ERR_CHKDLY_IFFILE_INIT, "接口文件格式不正确，无法解释的账期: [%s] [FILE:%s, LINE:%d]", period_fmt.c_str(), __FILE__, __LINE__);
+		}
+
+		file_name.replace(beg_pos, fmt_size, period_time);
+	}
+
+	m_pLog->Output("[INTERFACE_FILE] Expand file name period: %s", file_name.c_str());
+	return file_name;
+}
+
+void InterfaceFile::ExpandFileNameOptions(const std::string& file_name)
+{
+	std::vector<std::string> vec_filename(1, file_name);
+	std::vector<std::string> vec_newfilename;
+	std::vector<std::string> vec_fn;
+	IFFileWithState          iffile_state;
+
+	while ( !vec_filename.empty() )
+	{
+		const int VEC_SIZE = vec_filename.size();
+		for ( int i = 0; i < VEC_SIZE; ++i )
+		{
+			std::string& ref_filename = vec_filename[i];
+			if ( ExpandOneOption(ref_filename, vec_fn) )
+			{
+				vec_newfilename.insert(vec_newfilename.end(), vec_fn.begin(), vec_fn.end());
+			}
+			else
+			{
+				// 缺省状态：缺失
+				iffile_state.m_exFileName = ref_filename;
+				iffile_state.SetFileState(IFFileWithState::IFFSTATE_MISSING);
+				m_setFileNameEx.insert(iffile_state);
+			}
+		}
+
+		vec_newfilename.swap(vec_filename);
+		std::vector<std::string>().swap(vec_newfilename);
+	}
+
+	int c = 0;
+	for ( std::set<IFFileWithState>::iterator it = m_setFileNameEx.begin(); it != m_setFileNameEx.end(); ++it )
+	{
+		m_pLog->Output("[INTERFACE_FILE] FILE_%d) [%s]", ++c, it->m_exFileName.c_str());
+	}
+}
+
+bool InterfaceFile::ExpandOneOption(const std::string& file_name, std::vector<std::string>& vec_fn)
+{
+	std::string  option;
+	unsigned int size = 0;
+
+	int beg_pos = OptionSet::GetSubstitute(file_name, 0, '{', '}', option, size);
+	if ( beg_pos >= 0 )
+	{
+		OptionSet* pOps = m_pIFFileList->GetOptionSet(option);
+		pOps->Expand(file_name, vec_fn);
+		return true;
+	}
+
+	return false;
 }
 

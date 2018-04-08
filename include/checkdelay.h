@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <map>
 #include <vector>
 #include "config.h"
 #include "period.h"
@@ -8,6 +9,7 @@
 namespace base
 {
 class Log;
+class BaseFile;
 }
 
 class FullDir;
@@ -59,6 +61,11 @@ private:
 	// 释放 InterfaceFileList
 	void ReleaseInterfaceFileList();
 
+	// 初始化输出
+	void InitOutput() throw(base::Exception);
+
+	void InitOutputOne(const std::string& chann, const std::string& file_name, std::map<std::string, base::BaseFile>& map_bf);
+
 	void CheckFDir(FullDir* pFDir) throw(base::Exception);
 
 private:
@@ -95,5 +102,9 @@ private:
 	std::vector<FullDir*>    m_vecInputFDir;			// 输入目录列表
 	Period                   m_period;
 	InterfaceFileList*       m_pIffList;
+
+private:
+	std::map<std::string, base::BaseFile> m_mapOutputMissing;
+	std::map<std::string, base::BaseFile> m_mapOutputBlank;
 };
 

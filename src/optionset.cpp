@@ -3,8 +3,7 @@
 #include "pubstr.h"
 
 OptionSet::OptionSet()
-:m_seq(0)
-,m_isComlex(false)
+:m_isComlex(false)
 {
 }
 
@@ -12,10 +11,10 @@ OptionSet::~OptionSet()
 {
 }
 
-int OptionSet::GetSubstitute(const std::string& src, const char l_border, const char r_border, std::string& sub, unsigned int& size)
+int OptionSet::GetSubstitute(const std::string& src, size_t pos, const char l_border, const char r_border, std::string& sub, unsigned int& size)
 {
 	// 格式：{ SUBSTITUTE }
-	const size_t BEG_POS = src.find(l_border);
+	const size_t BEG_POS = src.find(l_border, pos);
 	if ( std::string::npos == BEG_POS )
 	{
 		return -1;
@@ -74,20 +73,65 @@ void OptionSet::Init(const std::string& ops) throw(base::Exception)
 	}
 }
 
-bool OptionSet::SetSeq(unsigned int seq)
+bool OptionSet::SetOption(const std::string& op)
 {
-	if ( seq > 0 )
+	if ( op.empty() )
 	{
-		m_seq = seq;
-		return true;
+		return false;
 	}
 
-	return false;
+	m_option = op;
+	return true;
 }
 
-unsigned int OptionSet::GetSeq() const
+void OptionSet::Expand(const std::string& file_name, VEC_STR& vec_fn) throw(base::Exception)
 {
-	return m_seq;
+	int          beg_pos = 0;
+	std::string  new_filename;
+	std::string  sub;
+	unsigned int size  = 0;
+	int          index = 0;
+	int          off   = 0;
+	VEC_STR      v_fn;
+
+	for ( SET_VEC_STR::iterator it = m_setOP.begin(); it != m_setOP.end(); ++it )
+	{
+		beg_pos      = 0;
+		new_filename = file_name;
+
+		while ( (beg_pos = GetSubstitute(new_filename, beg_pos, '{', '}', sub, size)) >= 0 )
+		{
+			off = 0;
+
+			if ( m_isComlex )	// 复合
+			{
+				if ( TryComplexSubstitute(sub, sub, index) && sub == m_option )
+				{
+					if ( index < 1 || index > it->size() )
+					{
+						throw base::Exception(ERR_CHKDLY_OPSET_FAIL, "OptionSet [%s] index is out of range: [%d] > [%lu] [FILE:%s, LINE:%d]", m_option.c_str(), index, it->size(), __FILE__, __LINE__);
+					}
+
+					new_filename.replace(beg_pos, size, (*it)[index-1]);
+					off = size - (*it)[index-1].size();
+				}
+			}
+			else	// 一般
+			{
+				if ( sub == m_option )
+				{
+					new_filename.replace(beg_pos, size, (*it)[0]);
+					off = size - (*it)[0].size();
+				}
+			}
+
+			beg_pos += (size - off);
+		}
+
+		v_fn.push_back(new_filename);
+	}
+
+	v_fn.swap(vec_fn);
 }
 
 bool OptionSet::IsComplex(const std::string& src, unsigned int& size) const

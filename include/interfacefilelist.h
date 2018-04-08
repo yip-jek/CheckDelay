@@ -18,6 +18,7 @@ class Period;
 class InterfaceFileList
 {
 public:
+	typedef std::set<std::string>					SET_STR;
 	typedef std::vector<InterfaceFile>				VEC_IFF;
 	typedef std::map<int, VEC_IFF>					MAP_PSEQ_IFF;
 	typedef std::map<std::string, OptionSet>		MAP_OPS;
@@ -33,6 +34,10 @@ public:
 
 	bool IsPathSeqValid(int seq) const;
 
+	OptionSet* GetOptionSet(const std::string& op) throw(base::Exception);
+
+	void GetChannels(SET_STR& s_chann) const { s_chann = m_setChannel; }
+
 private:
 	base::Log*       m_pLog;
 
@@ -41,5 +46,6 @@ private:
 	const Period*    m_pPeriod;				// 账期时间
 	MAP_OPS          m_mapOps;
 	MAP_PSEQ_IFF     m_mapPSeqIff;
+	SET_STR          m_setChannel;
 };
 

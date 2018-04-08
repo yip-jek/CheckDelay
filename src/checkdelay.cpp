@@ -103,6 +103,7 @@ void CheckDelay::Init() throw(base::Exception)
 	InitInputDir();
 	InitPeriod();
 	InitInterfaceFileList();
+	InitOutput();
 
 	m_pLog->Output("[CHECK_DELAY] Init OK.");
 }
@@ -247,6 +248,25 @@ void CheckDelay::ReleaseInterfaceFileList()
 		delete m_pIffList;
 		m_pIffList = NULL;
 	}
+}
+
+void CheckDelay::InitOutput() throw(base::Exception)
+{
+	std::string           filename_missing;
+	std::string           filename_blank;
+	std::set<std::string> s_chann;
+
+	m_pIffList->GetChannels(s_chann);
+	for ( std::set<std::string>::iterator s_it = s_chann.begin(); s_it != s_chann.end(); ++s_it )
+	{
+		InitOutputOne(*s_it, filename_missing, m_mapOutputMissing);
+		InitOutputOne(*s_it, filename_blank, m_mapOutputBlank);
+	}
+}
+
+void CheckDelay::InitOutputOne(const std::string& chann, const std::string& file_name, std::map<std::string, base::BaseFile>& map_bf)
+{
+	//base::BaseFile& ref_bf = m_mapOutputMissing[*s_it];
 }
 
 void CheckDelay::CheckFDir(FullDir* pFDir) throw(base::Exception)
