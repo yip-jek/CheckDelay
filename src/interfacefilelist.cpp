@@ -139,5 +139,26 @@ void InterfaceFileList::CompareFile(int path_seq, const std::vector<FDFileInfo>&
 
 void InterfaceFileList::ExportFileState(std::vector<OutputFileState>& vec_ofs)
 {
+	std::string period_day = m_pPeriod->GetDay();
+	OutputFileState ofs;
+	std::vector<OutputFileState> v_ofs;
+
+	for ( MAP_PSEQ_IFF::iterator m_it = m_mapPSeqIff.begin(); m_it != m_mapPSeqIff.end(); ++m_it )
+	{
+		VEC_IFF& ref_vec_iff = m_it->second;
+
+		const int VEC_SIZE = ref_vec_iff.size();
+		for ( int i = 0; i < VEC_SIZE; ++i )
+		{
+			InterfaceFile& ref_iff = ref_vec_iff[i];
+
+			ofs.date_time = period_day;
+			ofs.channel   = ref_iff.GetChannel();
+
+			ref_iff.ExportOutputFile(ofs, v_ofs);
+		}
+	}
+
+	v_ofs.swap(vec_ofs);
 }
 

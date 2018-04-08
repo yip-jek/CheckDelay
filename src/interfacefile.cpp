@@ -8,6 +8,7 @@
 #include "period.h"
 #include "optionset.h"
 #include "iffilestate.h"
+#include "outputfilestate.h"
 
 const char* const InterfaceFile::S_CHANNEL_TAG = "CHANNEL";
 
@@ -114,6 +115,24 @@ void InterfaceFile::UpdateFileState(const FDFileInfo& f_info)
 			ref_iffs.m_chgtime  = f_info.chg_time.TimeStamp();
 			break;
 		}
+	}
+}
+
+void InterfaceFile::ExportOutputFile(OutputFileState& ofs, std::vector<OutputFileState>& vec_ofs)
+{
+	for ( MAP_IFFILE_STATE::iterator it = m_mapFileNameEx.begin(); it != m_mapFileNameEx.end(); ++it )
+	{
+		IFFileState& ref_iffs = it->second;
+
+		ofs.file_name     = it->first;
+		ofs.file_size     = ref_iffs.m_fileSize;
+		ofs.file_chgtime  = ref_iffs.m_chgtime;
+		ofs.iff_state     = ref_iffs.GetFileState();
+		ofs.state_missing = ref_iffs.GetStateMissing();
+		ofs.state_blank   = ref_iffs.GetStateBlank();
+		ofs.state_delay   = ref_iffs.GetStateDelay();
+
+		vec_ofs.push_back(ofs);
 	}
 }
 

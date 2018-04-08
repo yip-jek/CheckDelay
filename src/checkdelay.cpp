@@ -5,6 +5,7 @@
 #include "log.h"
 #include "pubstr.h"
 #include "simpletime.h"
+#include "checkdb2.h"
 #include "interfacefile.h"
 #include "interfacefilelist.h"
 #include "optionset.h"
@@ -19,12 +20,14 @@ CheckDelay::CheckDelay()
 ,m_recurse(false)
 ,m_uOptionSize(0)
 ,m_uPathSize(0)
+,m_pDB2(NULL)
 ,m_pIffList(NULL)
 {
 }
 
 CheckDelay::~CheckDelay()
 {
+	ReleaseDB2();
 	ReleaseInputDir();
 	ReleaseInterfaceFileList();
 
@@ -103,6 +106,7 @@ void CheckDelay::LoadConfig(char* p_cfgfile) throw(base::Exception)
 
 void CheckDelay::Init() throw(base::Exception)
 {
+	InitDB2();
 	InitInputDir();
 	InitPeriod();
 	InitInterfaceFileList();
@@ -115,9 +119,6 @@ void CheckDelay::Run() throw(base::Exception)
 {
 	TraverseInputDir();
 	OutputResult();
-
-	CloseOutputFile(m_mapOutputMissing);
-	CloseOutputFile(m_mapOutputBlank);
 }
 
 void CheckDelay::LogOutConfig()
@@ -189,6 +190,20 @@ void CheckDelay::LogOutDynamicCfg(const std::string& seg, const std::string& ite
 	}
 }
 
+void CheckDelay::InitDB2() throw(base::Exception)
+{
+	ReleaseDB2();
+
+	m_pDB2 = new CheckDB2(m_dbName, m_dbUsr, m_dbPwd);
+	if ( NULL == m_pDB2 )
+	{
+		throw base::Exception(ERR_CHKDLY_INIT_FAIL, "Operate new CheckDB2() failed: 无法申请到内存空间! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+
+	m_pDB2->Connect();
+	m_pDB2->SetOutputTab(m_outputTab);
+}
+
 void CheckDelay::InitInputDir() throw(base::Exception)
 {
 	ReleaseInputDir();
@@ -226,6 +241,17 @@ void CheckDelay::InitInterfaceFileList() throw(base::Exception)
 	m_pIffList = new InterfaceFileList(m_uPathSize, m_period);
 	m_pIffList->ImportOptions(m_vecOptions);
 	m_pIffList->ImportFile(m_interFileList);
+}
+
+void CheckDelay::ReleaseDB2()
+{
+	if ( m_pDB2 != NULL )
+	{
+		m_pDB2->Disconnect();
+
+		delete m_pDB2;
+		m_pDB2 = NULL;
+	}
 }
 
 void CheckDelay::ReleaseInputDir()
@@ -363,6 +389,13 @@ void CheckDelay::OutputResult()
 {
 	m_pIffList->ExportFileState(m_vecOutputFState);
 
+	MakeStateDesc();
+	OutputToDB2();
+	OutputToFile();
+}
+
+void CheckDelay::MakeStateDesc()
+{
 	// 生成状态描述
 	const int VEC_SIZE = m_vecOutputFState.size();
 	for ( int i = 0; i < VEC_SIZE; ++i )
@@ -371,29 +404,69 @@ void CheckDelay::OutputResult()
 
 		switch ( ref_ofs.iff_state )
 		{
-		case IFFSTATE_NORMAL:			// 正常
+		case IFFileState::IFFSTATE_NORMAL:			// 正常
 			ref_ofs.state_desc = m_stateNormal;
 			break;
-		case IFFSTATE_MISSING:			// 缺失
+		case IFFileState::IFFSTATE_MISSING:			// 缺失
 			ref_ofs.state_desc = m_stateMissing;
 			break;
-		case IFFSTATE_BLANK:			// 内容为空
+		case IFFileState::IFFSTATE_BLANK:			// 内容为空
 			ref_ofs.state_desc = m_stateBlank;
 			break;
-		case IFFSTATE_DELAY:			// 延迟
+		case IFFileState::IFFSTATE_DELAY:			// 延迟
 			ref_ofs.state_desc = m_stateDelay;
 			break;
-		case IFFSTATE_DELAY_BLANK:		// 延迟，内容为空
+		case IFFileState::IFFSTATE_DELAY_BLANK:		// 延迟，内容为空
 			ref_ofs.state_desc = m_stateDelayBlank;
 			break;
 		}
 	}
+}
 
-	OutputToFile();
+void CheckDelay::OutputToDB2()
+{
+	m_pDB2->DeleteOldData(m_period.GetDay());
+	m_pDB2->InsertResult(m_vecOutputFState);
+	m_pLog->Output("[CHECK_DELAY] Output result data to DB2: [%lu]", m_vecOutputFState.size());
 }
 
 void CheckDelay::OutputToFile()
 {
+	std::map<std::string, unsigned int> map_stat_mis;
+	std::map<std::string, unsigned int> map_stat_blk;
+
+	const std::string period_day = m_period.GetDay();
+	const int         VEC_SIZE   = m_vecOutputFState.size();
+
+	for ( int i = 0; i < VEC_SIZE; ++i )
+	{
+		OutputFileState& ref_ofs = m_vecOutputFState[i];
+
+		if ( ref_ofs.state_missing )
+		{
+			++map_stat_mis[ref_ofs.channel];
+			m_mapOutputMissing[ref_ofs.channel].Write(period_day+"|"+ref_ofs.file_name);
+		}
+
+		if ( ref_ofs.state_blank )
+		{
+			++map_stat_blk[ref_ofs.channel];
+			m_mapOutputBlank[ref_ofs.channel].Write(period_day+"|"+ref_ofs.file_name);
+		}
+	}
+
+	for ( std::map<std::string, unsigned int>::iterator it1 = map_stat_mis.begin(); it1 != map_stat_mis.end(); ++it1 )
+	{
+		m_pLog->Output("[CHECK_DELAY] Output to file: CHANNEL=[%s], MISSING=[%u]", it1->first.c_str(), it1->second);
+	}
+
+	for ( std::map<std::string, unsigned int>::iterator it2 = map_stat_blk.begin(); it2 != map_stat_blk.end(); ++it2 )
+	{
+		m_pLog->Output("[CHECK_DELAY] Output to file: CHANNEL=[%s], BLANK=[%u]", it2->first.c_str(), it2->second);
+	}
+
+	CloseOutputFile(m_mapOutputMissing);
+	CloseOutputFile(m_mapOutputBlank);
 }
 
 void CheckDelay::CloseOutputFile(MAP_CHANN_OUTPUT& map_bf)

@@ -63,7 +63,7 @@ void OptionSet::Init(const std::string& ops) throw(base::Exception)
 	}
 
 	unsigned int size = 0;
-	if ( m_isComlex = IsComplex(vec_str[0], size) )
+	if ( (m_isComlex = IsComplex(vec_str[0], size)) )
 	{
 		InitComplexSet(vec_str, size);
 	}

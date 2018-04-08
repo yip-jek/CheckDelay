@@ -14,6 +14,7 @@ struct FDFileInfo;
 class IFFileState;
 class InterfaceFileList;
 class Period;
+struct OutputFileState;
 
 class InterfaceFile
 {
@@ -34,6 +35,8 @@ public:
 	void Init(const std::string& fmt) throw(base::Exception);
 
 	void UpdateFileState(const FDFileInfo& f_info);
+
+	void ExportOutputFile(OutputFileState& ofs, std::vector<OutputFileState>& vec_ofs);
 
 	int          GetPathSeq()       const { return m_pathSeq      ; }
 	std::string  GetChannel()       const { return m_channel      ; }

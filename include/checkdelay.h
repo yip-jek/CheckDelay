@@ -13,6 +13,7 @@ class Log;
 class BaseFile;
 }
 
+class CheckDB2;
 class FullDir;
 class InterfaceFileList;
 struct OutputFileState;
@@ -52,6 +53,9 @@ private:
 	// 日志输出动态配置项
 	void LogOutDynamicCfg(const std::string& seg, const std::string& item_prefix, const std::vector<std::string>& v_items);
 
+	// 初始化数据库连接
+	void InitDB2() throw(base::Exception);
+
 	// 初始化输入目录
 	void InitInputDir() throw(base::Exception);
 
@@ -60,6 +64,9 @@ private:
 
 	// 初始化 InterfaceFileList
 	void InitInterfaceFileList() throw(base::Exception);
+
+	// 释放数据库连接
+	void ReleaseDB2();
 
 	// 释放输入目录资源
 	void ReleaseInputDir();
@@ -79,6 +86,10 @@ private:
 	void TraverseInputDir() throw(base::Exception);
 
 	void OutputResult();
+
+	void MakeStateDesc();
+
+	void OutputToDB2();
 
 	void OutputToFile();
 
@@ -115,6 +126,7 @@ private:
 	std::string              m_outputTab;				// 输出库表名
 
 private:
+	CheckDB2*                m_pDB2;
 	std::vector<FullDir*>    m_vecInputFDir;			// 输入目录列表
 	Period                   m_period;
 	InterfaceFileList*       m_pIffList;
