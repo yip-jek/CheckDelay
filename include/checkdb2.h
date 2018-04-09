@@ -18,8 +18,8 @@ public:
 	// 删除旧账期数据
 	void DeleteOldData(const std::string& date_time) throw(base::Exception);
 
-	// 插入新数据
-	void InsertResult(const std::vector<OutputFileState>& vec_ofs) throw(base::Exception);
+	// 合并结果数据
+	void MergeResultData(const std::vector<OutputFileState>& vec_ofs) throw(base::Exception);
 
 private:
 	// 是否无数据被删除

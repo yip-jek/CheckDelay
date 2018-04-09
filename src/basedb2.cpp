@@ -107,7 +107,7 @@ void BaseDB2::Commit() throw(Exception)
 		}
 
 		std::cout << "[DB2] Commit OK." << std::endl;
-		m_pLog->Output("[DB2] Commit OK.");
+		//m_pLog->Output("[DB2] Commit OK.");
 	}
 }
 

@@ -425,8 +425,7 @@ void CheckDelay::MakeStateDesc()
 
 void CheckDelay::OutputToDB2()
 {
-	m_pDB2->DeleteOldData(m_period.GetDay());
-	m_pDB2->InsertResult(m_vecOutputFState);
+	m_pDB2->MergeResultData(m_vecOutputFState);
 	m_pLog->Output("[CHECK_DELAY] Output result data to DB2: [%lu]", m_vecOutputFState.size());
 }
 
