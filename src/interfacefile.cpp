@@ -268,8 +268,13 @@ void InterfaceFile::ExpandEstimatedTime() throw(base::Exception)
 void InterfaceFile::ExpandFileNameSet() throw(base::Exception)
 {
 	m_mapFileNameEx.clear();
-	std::string file_name;
+	if ( IsEstimatedTimeLater() )
+	{
+		m_pLog->Output("[INTERFACE_FILE] Not to expand file name set !");
+		return;
+	}
 
+	std::string file_name;
 	if ( m_isMonPeriod )	// 月账期
 	{
 		base::SimpleTime st_period = m_pPeriod->GetDay_ST();
@@ -287,6 +292,18 @@ void InterfaceFile::ExpandFileNameSet() throw(base::Exception)
 	}
 
 	ExpandFileNameOptions(file_name);
+}
+
+bool InterfaceFile::IsEstimatedTimeLater()
+{
+	base::SimpleTime st_now(base::SimpleTime::Now());
+	if ( m_estimatedTime > st_now )
+	{
+		m_pLog->Output("<WARNING> [INTERFACE_FILE] Estimated time is later than NOW: ESTIMATED_TIME=[%s], NOW=[%s]", m_estimatedTime.TimeStamp().c_str(), st_now.TimeStamp().c_str());
+		return true;
+	}
+
+	return false;
 }
 
 std::string InterfaceFile::ExpandFileNamePeriod(const Period* p) throw(base::Exception)

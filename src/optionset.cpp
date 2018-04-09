@@ -55,7 +55,7 @@ void OptionSet::Init(const std::string& ops) throw(base::Exception)
 {
 	// 格式：OP1, OP2, OP3, ...
 	VEC_STR vec_str;
-	base::PubStr::Str2StrVector(ops, ",", vec_str);
+	base::PubStr::Str2StrVector(base::PubStr::UpperB(ops), ",", vec_str);
 
 	if ( vec_str.empty() )
 	{

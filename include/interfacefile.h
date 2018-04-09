@@ -59,6 +59,8 @@ private:
 
 	void ExpandFileNameSet() throw(base::Exception);
 
+	bool IsEstimatedTimeLater();
+
 	std::string ExpandFileNamePeriod(const Period* p) throw(base::Exception);
 
 	void ExpandFileNameOptions(const std::string& file_name);

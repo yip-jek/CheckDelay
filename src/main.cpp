@@ -29,7 +29,7 @@ void Test()
 }
 #endif
 
-const char* g_version = "v3.00";
+const char* g_version = "Version v3.20 released. Compiled at " __TIME__ " on " __DATE__;
 
 int main(int argc, char* argv[])
 {
@@ -86,6 +86,8 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
+	std::cout << argv[0] << " quit!" << std::endl;
+	pLog->Output("%s quit!", argv[0]);
 	return 0;
 }
 
