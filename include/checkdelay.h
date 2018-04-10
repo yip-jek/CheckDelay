@@ -81,7 +81,9 @@ private:
 
 	void TransOutputPeriod(std::string& file_name);
 
-	void InitOutputChannel(const std::string& file_name, std::set<std::string> set_chann, MAP_CHANN_OUTPUT& map_bf) throw(base::Exception);
+	void InitOutputChannel(const std::string& file_name, std::set<std::string>& set_chann, MAP_CHANN_OUTPUT& map_bf) throw(base::Exception);
+
+	void InitOutputFile(const std::string& chann, const std::string& file_path, MAP_CHANN_OUTPUT& map_bf) throw(base::Exception);
 
 	void TraverseInputDir() throw(base::Exception);
 
@@ -90,6 +92,8 @@ private:
 	void MakeStateDesc();
 
 	void OutputToDB2();
+
+	base::BaseFile* FetchOutputFile(const std::string& chann, MAP_CHANN_OUTPUT& map_output) throw(base::Exception);
 
 	void OutputToFile();
 

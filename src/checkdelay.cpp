@@ -329,7 +329,7 @@ void CheckDelay::TransOutputPeriod(std::string& file_name)
 	m_pLog->Output("[CHECK_DELAY] Transfer output file period: %s", file_name.c_str());
 }
 
-void CheckDelay::InitOutputChannel(const std::string& file_name, std::set<std::string> set_chann, MAP_CHANN_OUTPUT& map_bf) throw(base::Exception)
+void CheckDelay::InitOutputChannel(const std::string& file_name, std::set<std::string>& set_chann, MAP_CHANN_OUTPUT& map_bf) throw(base::Exception)
 {
 	std::string  str;
 	unsigned int size    = 0;
@@ -343,30 +343,40 @@ void CheckDelay::InitOutputChannel(const std::string& file_name, std::set<std::s
 		}
 	}
 
+	// 输出文件不按渠道区分，只输出到一个文件
 	if ( beg_pos < 0 )
 	{
-		throw base::Exception(ERR_CHKDLY_INIT_FAIL, "找不到输出文件名的渠道标识: [%s] [FILE:%s, LINE:%d]", InterfaceFile::S_CHANNEL_TAG, __FILE__, __LINE__);
+		str = m_outputPath + file_name;
+		InitOutputFile("<DEFAULT>", str, map_bf);
 	}
-
-	for ( std::set<std::string>::iterator s_it = set_chann.begin(); s_it != set_chann.end(); ++s_it )
+	else
 	{
-		str = file_name;
-		str.replace(beg_pos, size, *s_it);
-		str = m_outputPath + str;
-
-		base::BaseFile& ref_bf = map_bf[*s_it];
-		if ( !ref_bf.Open(str, true) )
+		for ( std::set<std::string>::iterator s_it = set_chann.begin(); s_it != set_chann.end(); ++s_it )
 		{
-			throw base::Exception(ERR_CHKDLY_INIT_FAIL, "Open output file failed: [%s] [FILE:%s, LINE:%d]", str.c_str(), __FILE__, __LINE__);
-		}
+			str = file_name;
+			str.replace(beg_pos, size, *s_it);
+			str = m_outputPath + str;
 
-		if ( !ref_bf.ReadyToWrite() )
-		{
-			throw base::Exception(ERR_CHKDLY_INIT_FAIL, "The output file is not ready to write: [%s] [FILE:%s, LINE:%d]", str.c_str(), __FILE__, __LINE__);
+			InitOutputFile(*s_it, str, map_bf);
 		}
-
-		m_pLog->Output("[CHECK_DELAY] Output file: %s, [CHANNEL=%s]", str.c_str(), s_it->c_str());
 	}
+}
+
+void CheckDelay::InitOutputFile(const std::string& chann, const std::string& file_path, MAP_CHANN_OUTPUT& map_bf) throw(base::Exception)
+{
+	base::BaseFile& ref_bf = map_bf[chann];
+
+	if ( !ref_bf.Open(file_path, true) )
+	{
+		throw base::Exception(ERR_CHKDLY_INIT_FAIL, "Open output file failed: [%s] [FILE:%s, LINE:%d]", file_path.c_str(), __FILE__, __LINE__);
+	}
+
+	if ( !ref_bf.ReadyToWrite() )
+	{
+		throw base::Exception(ERR_CHKDLY_INIT_FAIL, "The output file is not ready to write: [%s] [FILE:%s, LINE:%d]", file_path.c_str(), __FILE__, __LINE__);
+	}
+
+	m_pLog->Output("[CHECK_DELAY] Output file: %s, [CHANNEL=%s]", file_path.c_str(), chann.c_str());
 }
 
 void CheckDelay::TraverseInputDir() throw(base::Exception)
@@ -429,6 +439,26 @@ void CheckDelay::OutputToDB2()
 	m_pLog->Output("[CHECK_DELAY] Output result data to DB2: [%lu]", m_vecOutputFState.size());
 }
 
+base::BaseFile* CheckDelay::FetchOutputFile(const std::string& chann, MAP_CHANN_OUTPUT& map_output) throw(base::Exception)
+{
+	MAP_CHANN_OUTPUT::iterator m_it = map_output.find(chann);
+	if ( m_it != map_output.end() )
+	{
+		return &(m_it->second);
+	}
+	else
+	{
+		if ( map_output.size() == 1U )
+		{
+			return &(map_output.begin()->second);
+		}
+		else
+		{
+			throw base::Exception(ERR_CHKDLY_OUTPUT_FAIL, "Fetch output file failed! Can not find the output file of channel: [%s] [FILE:%s, LINE:%d]", chann.c_str(), __FILE__, __LINE__);
+		}
+	}
+}
+
 void CheckDelay::OutputToFile()
 {
 	std::map<std::string, unsigned int> map_stat_mis;
@@ -436,6 +466,7 @@ void CheckDelay::OutputToFile()
 
 	const std::string period_day = m_period.GetDay();
 	const int         VEC_SIZE   = m_vecOutputFState.size();
+	base::BaseFile*   pOutput    = NULL;
 
 	for ( int i = 0; i < VEC_SIZE; ++i )
 	{
@@ -444,13 +475,17 @@ void CheckDelay::OutputToFile()
 		if ( ref_ofs.state_missing )
 		{
 			++map_stat_mis[ref_ofs.channel];
-			m_mapOutputMissing[ref_ofs.channel].Write(period_day+"|"+ref_ofs.file_name);
+
+			pOutput = FetchOutputFile(ref_ofs.channel, m_mapOutputMissing);
+			pOutput->Write(period_day+"|"+ref_ofs.file_name);
 		}
 
 		if ( ref_ofs.state_blank )
 		{
 			++map_stat_blk[ref_ofs.channel];
-			m_mapOutputBlank[ref_ofs.channel].Write(period_day+"|"+ref_ofs.file_name);
+
+			pOutput = FetchOutputFile(ref_ofs.channel, m_mapOutputBlank);
+			pOutput->Write(period_day+"|"+ref_ofs.file_name);
 		}
 	}
 
