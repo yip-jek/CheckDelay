@@ -5,6 +5,7 @@
 #include "log.h"
 #include "pubstr.h"
 #include "simpletime.h"
+#include "nowtime.h"
 #include "checkdb2.h"
 #include "interfacefile.h"
 #include "interfacefilelist.h"
@@ -308,21 +309,23 @@ void CheckDelay::InitOutputPath() throw(base::Exception)
 
 void CheckDelay::TransOutputPeriod(std::string& file_name)
 {
+	NowTime      nt;
+	std::string  fmt;
 	std::string  period;
 	unsigned int fmt_size = 0;
 	int          beg_pos  = 0;
 
-	while ( (beg_pos = OptionSet::GetSubstitute(file_name, beg_pos, '[', ']', period, fmt_size)) >= 0 )
+	while ( (beg_pos = OptionSet::GetSubstitute(file_name, beg_pos, '[', ']', fmt, fmt_size)) >= 0 )
 	{
-		period = m_period.GetDay_fmt(period);
-		if ( period.empty() )
-		{
-			beg_pos += fmt_size;
-		}
-		else
+		period = m_period.GetDay_fmt(fmt);
+		if ( !period.empty() || (period.empty() && nt.Init(fmt, period)) )
 		{
 			file_name.replace(beg_pos, fmt_size, period);
 			beg_pos += period.size();
+		}
+		else
+		{
+			beg_pos += fmt_size;
 		}
 	}
 

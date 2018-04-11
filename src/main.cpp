@@ -29,7 +29,7 @@ void Test()
 }
 #endif
 
-const char* g_version = "Version v4.10 released. Compiled at " __TIME__ " on " __DATE__;
+const char* g_version = "Version v4.50 released. Compiled at " __TIME__ " on " __DATE__;
 
 int main(int argc, char* argv[])
 {

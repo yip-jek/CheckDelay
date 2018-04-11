@@ -16,6 +16,7 @@ InterfaceFile::InterfaceFile(InterfaceFileList& if_file_list, const Period& peri
 :m_pLog(base::Log::Instance())
 ,m_pIFFileList(&if_file_list)
 ,m_pPeriod(&period)
+,m_stNow(base::SimpleTime::Now())
 ,m_pathSeq(0)
 ,m_days(0)
 ,m_hour(0)
@@ -75,13 +76,15 @@ void InterfaceFile::UpdateFileState(const FDFileInfo& f_info)
 	const std::string UPPER_FILE_NAME = base::PubStr::UpperB(f_info.file_name);
 	const size_t      FILE_NAME_SIZE  = UPPER_FILE_NAME.size();
 
+	std::string upper_iffile;
 	for ( MAP_IFFILE_STATE::iterator m_it = m_mapFileNameEx.begin(); m_it != m_mapFileNameEx.end(); ++m_it )
 	{
-		const size_t IFFILE_SIZE = m_it->first.size();
+		upper_iffile = base::PubStr::UpperB(m_it->first);
+		const size_t IFFILE_SIZE = upper_iffile.size();
 
 		// 完全匹配，或者前部匹配
-		if ( (FILE_NAME_SIZE == IFFILE_SIZE && UPPER_FILE_NAME == m_it->first) 
-			|| (FILE_NAME_SIZE > IFFILE_SIZE && UPPER_FILE_NAME.substr(0, IFFILE_SIZE) == m_it->first) )
+		if ( (FILE_NAME_SIZE == IFFILE_SIZE && UPPER_FILE_NAME == upper_iffile) 
+			|| (FILE_NAME_SIZE > IFFILE_SIZE && UPPER_FILE_NAME.substr(0, IFFILE_SIZE) == upper_iffile) )
 		{
 			IFFileState& ref_iffs = m_it->second;
 
@@ -158,7 +161,9 @@ void InterfaceFile::Explain(const std::string& fmt) throw(base::Exception)
 	m_channel = base::PubStr::UpperB(vec_str[1]);
 
 	// 文件名
-	m_fileName = base::PubStr::UpperB(vec_str[2]);
+	// 保持原有大小写的格式
+	//m_fileName = base::PubStr::UpperB(vec_str[2]);
+	m_fileName = vec_str[2];
 
 	// 延迟天数
 	if ( !base::PubStr::Str2Int(vec_str[3], m_days) )
@@ -296,10 +301,9 @@ void InterfaceFile::ExpandFileNameSet() throw(base::Exception)
 
 bool InterfaceFile::IsEstimatedTimeLater()
 {
-	base::SimpleTime st_now(base::SimpleTime::Now());
-	if ( m_estimatedTime > st_now )
+	if ( m_estimatedTime > m_stNow )
 	{
-		m_pLog->Output("<WARNING> [INTERFACE_FILE] Estimated time is later than NOW: ESTIMATED_TIME=[%s], NOW=[%s]", m_estimatedTime.TimeStamp().c_str(), st_now.TimeStamp().c_str());
+		m_pLog->Output("<WARNING> [INTERFACE_FILE] Estimated time is later than NOW: ESTIMATED_TIME=[%s], NOW=[%s]", m_estimatedTime.TimeStamp().c_str(), m_stNow.TimeStamp().c_str());
 		return true;
 	}
 

@@ -55,7 +55,7 @@ void OptionSet::Init(const std::string& ops) throw(base::Exception)
 {
 	// 格式：OP1, OP2, OP3, ...
 	VEC_STR vec_str;
-	base::PubStr::Str2StrVector(base::PubStr::UpperB(ops), ",", vec_str);
+	base::PubStr::Str2StrVector(ops, ",", vec_str);
 
 	if ( vec_str.empty() )
 	{
@@ -105,7 +105,7 @@ void OptionSet::Expand(const std::string& file_name, VEC_STR& vec_fn) throw(base
 
 			if ( m_isComlex )	// 复合
 			{
-				if ( TryComplexSubstitute(sub, sub, index) && sub == m_option )
+				if ( TryComplexSubstitute(sub, sub, index) && base::PubStr::UpperB(sub) == m_option )
 				{
 					if ( index < 1 || index > (int)it->size() )
 					{
@@ -118,7 +118,7 @@ void OptionSet::Expand(const std::string& file_name, VEC_STR& vec_fn) throw(base
 			}
 			else	// 一般
 			{
-				if ( sub == m_option )
+				if ( base::PubStr::UpperB(sub) == m_option )
 				{
 					new_filename.replace(beg_pos, size, (*it)[0]);
 					off = size - (*it)[0].size();

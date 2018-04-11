@@ -71,6 +71,7 @@ private:
 	base::Log*         m_pLog;
 	InterfaceFileList* m_pIFFileList;
 	const Period*      m_pPeriod;
+	base::SimpleTime   m_stNow;					// 当前系统时间
 
 private:
 	int                m_pathSeq;				// 目录序号

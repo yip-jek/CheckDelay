@@ -34,8 +34,9 @@ void InterfaceFileList::ImportFile(const std::string& interface_file) throw(base
 		throw base::Exception(ERR_CHKDLY_IFFLIST_FAIL, "无法读取接口文件清单: [%s] [FILE:%s, LINE:%d]", interface_file.c_str(), __FILE__, __LINE__);
 	}
 
-	unsigned int  count = 0;
-	size_t        pos   = 0;
+	unsigned int  count_line = 0;
+	unsigned int  count_iff  = 0;
+	size_t        pos        = 0;
 	std::string   line;
 	InterfaceFile iff(*this, *m_pPeriod);
 
@@ -44,7 +45,7 @@ void InterfaceFileList::ImportFile(const std::string& interface_file) throw(base
 
 	while ( bf_iff.Read(line) )
 	{
-		++count;
+		++count_line;
 
 		// 忽略注释
 		pos = line.find('#');
@@ -61,13 +62,15 @@ void InterfaceFileList::ImportFile(const std::string& interface_file) throw(base
 			continue;
 		}
 
+		++count_iff;
 		iff.Init(line);
 		m_setChannel.insert(iff.GetChannel());
 		m_mapPSeqIff[iff.GetPathSeq()].push_back(iff);
 	}
 
-	m_pLog->Output("[INTERFACE_FILE_LIST] Read the interface_file_list line(s): %u", count);
-	m_pLog->Output("[INTERFACE_FILE_LIST] Import interface_file(s) size: %lu", m_mapPSeqIff.size());
+	m_pLog->Output("[INTERFACE_FILE_LIST] Read the interface_file_list line(s): %u", count_line);
+	m_pLog->Output("[INTERFACE_FILE_LIST] Import interface_file(s) size: %u", count_iff);
+	m_pLog->Output("[INTERFACE_FILE_LIST] Channel(s) size: %lu", m_setChannel.size());
 }
 
 void InterfaceFileList::ImportOptions(const std::vector<std::string>& vec_ops) throw(base::Exception)
@@ -101,6 +104,7 @@ OptionSet* InterfaceFileList::GetOptionSet(const std::string& op) throw(base::Ex
 
 	OptionSet::TryComplexSubstitute(op, s_op, index);
 
+	base::PubStr::Upper(s_op);
 	if ( (m_it = m_mapOps.find(s_op)) != m_mapOps.end() )
 	{
 		return &(m_it->second);
