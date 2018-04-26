@@ -29,8 +29,6 @@ void Test()
 }
 #endif
 
-const char* g_version = "Version v4.50 released. Compiled at " __TIME__ " on " __DATE__;
-
 int main(int argc, char* argv[])
 {
 	if ( argc != 3 )
@@ -60,7 +58,7 @@ int main(int argc, char* argv[])
 	{
 		pLog->SetPath(CheckDelay::GetCfgLogPath(argv[2]));
 		pLog->Init();
-		pLog->Output("%s, PID=[%d]", g_version, getpid());
+		pLog->Output("%s, PID=[%d]", CheckDelay::GetVersion(), getpid());
 
 		try
 		{

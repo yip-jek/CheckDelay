@@ -48,6 +48,8 @@ public:
 private:
 	void Explain(const std::string& fmt) throw(base::Exception);
 
+	void SplitHourMin(const std::string& hm) throw(base::Exception);
+
 	void Check() throw(base::Exception);
 
 	// 是否为月账期
@@ -79,6 +81,7 @@ private:
 	std::string        m_fileName;				// 文件名
 	int                m_days;					// 延迟天数
 	int                m_hour;					// 预计到达时间点：小时
+	int                m_min;					// 预计到达时间点：分钟
 	unsigned int       m_fileBlanksize;			// 文件为空的大小
 
 private:

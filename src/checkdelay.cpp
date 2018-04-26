@@ -35,6 +35,11 @@ CheckDelay::~CheckDelay()
 	base::Log::Release();
 }
 
+const char* CheckDelay::GetVersion()
+{
+	return ("Version v4.6.0 released. Compiled at " __TIME__ " on " __DATE__);
+}
+
 std::string CheckDelay::GetCfgLogPath(char* p_cfgfile) throw(base::Exception)
 {
 	base::Config t_cfg;

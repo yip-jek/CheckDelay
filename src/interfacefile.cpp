@@ -20,6 +20,7 @@ InterfaceFile::InterfaceFile(InterfaceFileList& if_file_list, const Period& peri
 ,m_pathSeq(0)
 ,m_days(0)
 ,m_hour(0)
+,m_min(0)
 ,m_fileBlanksize(0)
 ,m_isMonPeriod(false)
 {
@@ -34,6 +35,7 @@ InterfaceFile::InterfaceFile(const InterfaceFile& iff)
 ,m_fileName(iff.m_fileName)
 ,m_days(iff.m_days)
 ,m_hour(iff.m_hour)
+,m_min(iff.m_min)
 ,m_fileBlanksize(iff.m_fileBlanksize)
 ,m_isMonPeriod(iff.m_isMonPeriod)
 ,m_mapFileNameEx(iff.m_mapFileNameEx)
@@ -55,6 +57,7 @@ InterfaceFile& InterfaceFile::operator = (const InterfaceFile& iff)
 		this->m_fileName      = iff.m_fileName;
 		this->m_days          = iff.m_days;
 		this->m_hour          = iff.m_hour;
+		this->m_min           = iff.m_min;
 		this->m_fileBlanksize = iff.m_fileBlanksize;
 		this->m_isMonPeriod   = iff.m_isMonPeriod;
 		this->m_mapFileNameEx = iff.m_mapFileNameEx;
@@ -171,16 +174,44 @@ void InterfaceFile::Explain(const std::string& fmt) throw(base::Exception)
 		throw base::Exception(ERR_CHKDLY_IFFILE_INIT, "延迟天数不是有效字符: [%s] [FILE:%s, LINE:%d]", vec_str[3].c_str(), __FILE__, __LINE__);
 	}
 
-	// 预计到达时间点：小时
-	if ( !base::PubStr::Str2Int(vec_str[4], m_hour) )
-	{
-		throw base::Exception(ERR_CHKDLY_IFFILE_INIT, "到达时间点不是有效字符: [%s] [FILE:%s, LINE:%d]", vec_str[4].c_str(), __FILE__, __LINE__);
-	}
+	// 预计到达时间点
+	SplitHourMin(vec_str[4]);
 
 	// 文件为空的大小
 	if ( !base::PubStr::Str2UInt(vec_str[5], m_fileBlanksize) )
 	{
 		throw base::Exception(ERR_CHKDLY_IFFILE_INIT, "文件为空的大小不是有效字符: [%s] [FILE:%s, LINE:%d]", vec_str[5].c_str(), __FILE__, __LINE__);
+	}
+}
+
+void InterfaceFile::SplitHourMin(const std::string& hm) throw(base::Exception)
+{
+	// 格式：HHMI 或者 HMI
+	// 例如：0800 或者 800，均表示 08:00:00
+	const size_t HM_SIZE = hm.size();
+	if ( HM_SIZE != 3 && HM_SIZE != 4 )
+	{
+		throw base::Exception(ERR_CHKDLY_IFFILE_INIT, "到达时间点“小时分钟”格式不正确: [%s] [FILE:%s, LINE:%d]", hm.c_str(), __FILE__, __LINE__);
+	}
+
+	std::string hhmi = hm;
+
+	// 3位时间在前面补'0'
+	if ( HM_SIZE == 3 )
+	{
+		hhmi.insert(0, "0");
+	}
+
+	// 小时
+	if ( !base::PubStr::Str2Int(hhmi.substr(0, 2), m_hour) )
+	{
+		throw base::Exception(ERR_CHKDLY_IFFILE_INIT, "到达小时数不是有效字符: [%s] [FILE:%s, LINE:%d]", hhmi.substr(0, 2).c_str(), __FILE__, __LINE__);
+	}
+
+	// 分钟
+	if ( !base::PubStr::Str2Int(hhmi.substr(2, 2), m_min) )
+	{
+		throw base::Exception(ERR_CHKDLY_IFFILE_INIT, "到达分钟数不是有效字符: [%s] [FILE:%s, LINE:%d]", hhmi.substr(2, 2).c_str(), __FILE__, __LINE__);
 	}
 }
 
@@ -198,10 +229,16 @@ void InterfaceFile::Check() throw(base::Exception)
 		throw base::Exception(ERR_CHKDLY_IFFILE_INIT, "延迟天数非法: [%d] [FILE:%s, LINE:%d]", m_days, __FILE__, __LINE__);
 	}
 
-	// 到达时间点是否合法
+	// 到达小时是否合法
 	if ( m_hour < 0 || m_hour > 23 )
 	{
-		throw base::Exception(ERR_CHKDLY_IFFILE_INIT, "到达时间点非法: [%d] [FILE:%s, LINE:%d]", m_hour, __FILE__, __LINE__);
+		throw base::Exception(ERR_CHKDLY_IFFILE_INIT, "到达时间点（小时）非法: [%d] [FILE:%s, LINE:%d]", m_hour, __FILE__, __LINE__);
+	}
+
+	// 到达分钟是否合法
+	if ( m_min < 0 || m_min > 59 )
+	{
+		throw base::Exception(ERR_CHKDLY_IFFILE_INIT, "到达时间点（分钟）非法: [%d] [FILE:%s, LINE:%d]", m_min, __FILE__, __LINE__);
 	}
 
 	// 文件为空的大小是否合法
@@ -256,7 +293,7 @@ void InterfaceFile::ExpandEstimatedTime() throw(base::Exception)
 		str_time = base::PubTime::TheDatePlusDays(st_period.GetYear(), st_period.GetMon(), st_period.GetDay(), m_days);
 	}
 
-	base::PubStr::SetFormatString(str_time, "%s%02d0000", str_time.c_str(), m_hour);
+	base::PubStr::SetFormatString(str_time, "%s%02d%02d00", str_time.c_str(), m_hour, m_min);
 	if ( !base::PubStr::Str2LLong(str_time, ll_time) )
 	{
 		throw base::Exception(ERR_CHKDLY_IFFILE_INIT, "账期时间非法: [%s] [FILE:%s, LINE:%d]", str_time.c_str(), __FILE__, __LINE__);

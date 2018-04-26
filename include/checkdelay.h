@@ -31,6 +31,8 @@ public:
 	static const char* const S_OPTION_SET;
 	static const char* const S_FILE_PATH;
 
+	static const char* GetVersion();
+
 	static std::string GetCfgLogPath(char* p_cfgfile) throw(base::Exception);
 
 public:
